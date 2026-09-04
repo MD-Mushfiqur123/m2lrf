@@ -36,12 +36,28 @@ import torch.nn.functional as F
 
 from m2lrf.quantizer import DualBasisQuantizer
 from m2lrf.packed_codec import Real2BitCodec
-from m2lrf.layer import M2LRF2BitLinear
-from m2lrf.trainer_eval import (
-    DEFAULT_TARGET_MODULES,
-    DEFAULT_EXCLUDE_MODULES,
-    get_model_device
-)
+
+DEFAULT_TARGET_MODULES = [
+    "q_proj", "k_proj", "v_proj", "o_proj",
+    "query_key_value", "qkv_proj", "W_pack", "out_proj",
+    "c_attn",
+    "gate_proj", "up_proj", "down_proj",
+    "dense", "dense_h_to_4h", "dense_4h_to_h", "fc1", "fc2",
+    "c_fc", "c_proj"
+]
+
+DEFAULT_EXCLUDE_MODULES = [
+    "lm_head", "embed_tokens", "wte", "wpe", "word_embeddings",
+    "norm", "ln_f", "ln_1", "ln_2", "ln_attn", "ln_mlp",
+    "input_layernorm", "post_attention_layernorm", "final_layernorm",
+    "rotary_emb"
+]
+
+def get_model_device(model: nn.Module) -> torch.device:
+    try:
+        return next(model.parameters()).device
+    except (StopIteration, AttributeError):
+        return torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
 # ====================================================================================================
@@ -1158,6 +1174,7 @@ def allocate_mixed_precision_model(
                 group_size=group_size
             ).to(target_device)
         else:
+            from m2lrf.unified_layer import M2LRF2BitLinear
             quant_layer = M2LRF2BitLinear(
                 in_features=in_features,
                 out_features=out_features,

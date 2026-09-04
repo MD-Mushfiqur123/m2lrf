@@ -31,7 +31,6 @@ from m2lrf.quantizer import (
     SparseOutlierBuffer
 )
 from m2lrf.packed_codec import Real2BitCodec, Packed2BitTensor
-from m2lrf.layer import M2LRF2BitLinear
 
 try:
     import triton
@@ -727,7 +726,7 @@ class M2LRFW2A8Linear(nn.Module):
     @classmethod
     def from_2bit_linear(
         cls,
-        m2lrf_2bit: M2LRF2BitLinear,
+        m2lrf_2bit: nn.Module,
         act_quant: bool = True,
         use_triton: bool = True
     ) -> "M2LRFW2A8Linear":

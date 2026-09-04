@@ -1,0 +1,66 @@
+{
+  "1. Baseline 2-Bit (Per-Row)": {
+    "mean_sqnr_db": 8.71942218732787,
+    "mean_rel_error_pct": 36.73454102934482,
+    "mean_effective_bpp": 2.0338541666666665,
+    "mean_compression_ratio": 7.8671883261076445,
+    "mean_latency_ms": 6.8651072083332565,
+    "delta_sqnr_vs_baseline_db": 0.0
+  },
+  "2. + Group Scaling (G=64)": {
+    "mean_sqnr_db": 9.041228174666324,
+    "mean_rel_error_pct": 35.375705326807655,
+    "mean_effective_bpp": 2.5,
+    "mean_compression_ratio": 6.400000000000001,
+    "mean_latency_ms": 10.350854041666556,
+    "delta_sqnr_vs_baseline_db": 0.321805987338454
+  },
+  "3. + Group Scaling (G=32)": {
+    "mean_sqnr_db": 9.176275843004387,
+    "mean_rel_error_pct": 34.81986954301362,
+    "mean_effective_bpp": 3.0,
+    "mean_compression_ratio": 5.333333333333333,
+    "mean_latency_ms": 10.40753112500037,
+    "delta_sqnr_vs_baseline_db": 0.45685365567651637
+  },
+  "4. + FWHT Rotation (G=64)": {
+    "mean_sqnr_db": 9.402325480153204,
+    "mean_rel_error_pct": 33.87631530839786,
+    "mean_effective_bpp": 2.5,
+    "mean_compression_ratio": 6.365795182717872,
+    "mean_latency_ms": 14.590391916666286,
+    "delta_sqnr_vs_baseline_db": 0.6829032928253334
+  },
+  "5. + 8-Bit Double Quant (G=64 + DQ)": {
+    "mean_sqnr_db": 9.410388119268806,
+    "mean_rel_error_pct": 33.844129434937024,
+    "mean_effective_bpp": 2.2838541666666665,
+    "mean_compression_ratio": 6.964832254785608,
+    "mean_latency_ms": 14.00782179166697,
+    "delta_sqnr_vs_baseline_db": 0.6909659319409354
+  },
+  "6. + LoftQ SVD Residual (r=32)": {
+    "mean_sqnr_db": 10.103019297437433,
+    "mean_rel_error_pct": 31.29293135342823,
+    "mean_effective_bpp": 2.2838541666666665,
+    "mean_compression_ratio": 3.80699896295885,
+    "mean_latency_ms": 14.209272875000162,
+    "delta_sqnr_vs_baseline_db": 1.3835971101095623
+  },
+  "7. + Dynamic INT8 Act (W2A8 + r=32)": {
+    "mean_sqnr_db": 10.104140582048645,
+    "mean_rel_error_pct": 31.289141781156264,
+    "mean_effective_bpp": 2.2838541666666665,
+    "mean_compression_ratio": 3.80699896295885,
+    "mean_latency_ms": 14.790733166666618,
+    "delta_sqnr_vs_baseline_db": 1.3847183947207746
+  },
+  "8. Mixed 2/4-Bit Allocation (2.60 bpp)": {
+    "mean_sqnr_db": 20.901587275002612,
+    "mean_rel_error_pct": 9.0242205921519,
+    "mean_effective_bpp": 4.25,
+    "mean_compression_ratio": 3.068566780629418,
+    "mean_latency_ms": 5.026491416666279,
+    "delta_sqnr_vs_baseline_db": 12.182165087674742
+  }
+}

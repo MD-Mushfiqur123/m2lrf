@@ -27,8 +27,13 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader
 
-from m2lrf.layer import M2LRF2BitLinear
-from m2lrf.w2a8_kernel import M2LRFW2A8Linear
+from m2lrf.unified_layer import (
+    M2LRFUnifiedLinear,
+    M2LRF2BitLinear,
+    HadamardDualBasisLinear,
+    M2LRF4BitLinear,
+    M2LRFW2A8Linear
+)
 
 
 def get_model_device(model: nn.Module) -> torch.device:
@@ -68,16 +73,22 @@ def prepare_m2lrf_model(
     model: nn.Module,
     rank: int = 16,
     alpha: Optional[float] = None,
+    bits: int = 2,
     target_modules: Optional[Union[List[str], str]] = None,
     exclude_modules: Optional[List[str]] = None,
     loftq_iters: int = 1,
     lora_dropout: float = 0.0,
     group_size: Optional[int] = None,
+    use_hadamard: bool = False,
+    use_w2a8: bool = False,
+    double_quant: bool = False,
+    sparse_outliers: bool = False,
+    block_size: Optional[int] = 512,
+    codec_type: str = "nf4",
     freeze_bias: bool = True,
     target_avg_bits: Optional[float] = None,
     calibration_data: Optional[Any] = None,
     metric: str = "fisher",
-    use_w2a8: bool = False,
     verbose: bool = True
 ) -> nn.Module:
     """
@@ -198,18 +209,76 @@ def prepare_m2lrf_model(
         packed_base_bytes += layer_packed_bytes
         lora_adapter_bytes += layer_lora_bytes
 
-        # Instantiate M2LRFW2A8Linear or M2LRF2BitLinear layer
-        layer_cls = M2LRFW2A8Linear if use_w2a8 else M2LRF2BitLinear
-        m2_layer = layer_cls(
-            in_features=in_features,
-            out_features=out_features,
-            rank=rank,
-            alpha=alpha,
-            bias=(bias_data is not None),
-            lora_dropout=lora_dropout,
-            loftq_iters=loftq_iters,
-            group_size=group_size
-        ).to(target_device)
+        # Instantiate appropriate canonical / specialized layer
+        if use_w2a8:
+            from m2lrf.w2a8_kernel import M2LRFW2A8Linear
+            m2_layer = M2LRFW2A8Linear(
+                in_features=in_features,
+                out_features=out_features,
+                rank=rank,
+                alpha=alpha,
+                bias=(bias_data is not None),
+                lora_dropout=lora_dropout,
+                loftq_iters=loftq_iters,
+                group_size=group_size,
+                double_quant=double_quant
+            ).to(target_device)
+        elif use_hadamard:
+            from m2lrf.hadamard_transform import HadamardDualBasisLinear
+            m2_layer = HadamardDualBasisLinear(
+                in_features=in_features,
+                out_features=out_features,
+                rank=rank,
+                alpha=alpha,
+                bias=(bias_data is not None),
+                lora_dropout=lora_dropout,
+                loftq_iters=loftq_iters,
+                group_size=group_size,
+                block_size=block_size
+            ).to(target_device)
+        elif bits == 4:
+            from m2lrf.mixed_precision import M2LRF4BitLinear
+            m2_layer = M2LRF4BitLinear(
+                in_features=in_features,
+                out_features=out_features,
+                rank=rank,
+                alpha=alpha,
+                bias=(bias_data is not None),
+                lora_dropout=lora_dropout,
+                loftq_iters=loftq_iters,
+                group_size=group_size,
+                codec_type=codec_type
+            ).to(target_device)
+        elif bits == 2 and not double_quant and not sparse_outliers:
+            from m2lrf.unified_layer import M2LRF2BitLinear
+            m2_layer = M2LRF2BitLinear(
+                in_features=in_features,
+                out_features=out_features,
+                rank=rank,
+                alpha=alpha,
+                bias=(bias_data is not None),
+                lora_dropout=lora_dropout,
+                loftq_iters=loftq_iters,
+                group_size=group_size
+            ).to(target_device)
+        else:
+            m2_layer = M2LRFUnifiedLinear(
+                in_features=in_features,
+                out_features=out_features,
+                bits=bits,
+                group_size=group_size,
+                use_hadamard=use_hadamard,
+                use_w2a8=use_w2a8,
+                double_quant=double_quant,
+                sparse_outliers=sparse_outliers,
+                rank=rank,
+                alpha=alpha,
+                bias=(bias_data is not None),
+                lora_dropout=lora_dropout,
+                loftq_iters=loftq_iters,
+                block_size=block_size,
+                codec_type=codec_type
+            ).to(target_device)
 
         # High-rank LoftQ SVD initialization with dynamic scaling normalization
         m2_layer.initialize_from_pretrained(weight_data, loftq_iters=loftq_iters)
