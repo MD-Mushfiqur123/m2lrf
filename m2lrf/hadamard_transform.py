@@ -84,8 +84,9 @@ def fast_walsh_hadamard_transform(
     if d == 1:
         return x.clone()
 
-    # Perform butterfly operations in float32 for numerical stability against half-precision overflow
-    y = x.float().clone()
+    # Perform butterfly operations in float32 (or float64 if input is float64) for numerical stability
+    calc_dtype = torch.float64 if x.dtype == torch.float64 else torch.float32
+    y = x.to(dtype=calc_dtype).clone()
     
     h = 1
     while h < d:
@@ -226,12 +227,17 @@ def generate_random_orthogonal_matrix(
     """
     generator = None
     if seed is not None:
-        generator = torch.Generator(device="cpu")
-        generator.manual_seed(seed)
+        gen_device = device if (device is not None and isinstance(device, (torch.device, str)) and "cuda" in str(device)) else "cpu"
+        try:
+            generator = torch.Generator(device=gen_device)
+            generator.manual_seed(seed)
+        except Exception:
+            generator = torch.Generator(device="cpu")
+            generator.manual_seed(seed)
         
     if mode == "haar_qr":
         # Random Gaussian matrix
-        g = torch.randn(d, d, generator=generator, device=device, dtype=torch.float64)
+        g = torch.randn(d, d, generator=generator, device=generator.device if generator else device, dtype=torch.float64).to(device=device)
         q, r = torch.linalg.qr(g)
         # Enforce positive diagonal entries on R to ensure unique Haar measure
         d_diag = torch.diagonal(r, dim1=-2, dim2=-1)
@@ -249,7 +255,7 @@ def generate_random_orthogonal_matrix(
             
         elif mode == "random_hadamard":
             # Generate Rademacher signs (+1 or -1)
-            rand_bits = torch.randint(0, 2, (d,), generator=generator, device=device, dtype=torch.float32)
+            rand_bits = torch.randint(0, 2, (d,), generator=generator, device=generator.device if generator else device, dtype=torch.float32).to(device=device)
             signs = rand_bits * 2.0 - 1.0
             # Q = D @ H_hat: each row of eye is multiplied by signs then FWHT
             eye_signed = eye * signs.unsqueeze(0)
@@ -258,9 +264,9 @@ def generate_random_orthogonal_matrix(
             
         elif mode == "double_random_hadamard":
             # Q = D1 @ H_hat @ D2 @ H_hat
-            rand_bits1 = torch.randint(0, 2, (d,), generator=generator, device=device, dtype=torch.float32)
+            rand_bits1 = torch.randint(0, 2, (d,), generator=generator, device=generator.device if generator else device, dtype=torch.float32).to(device=device)
             signs1 = rand_bits1 * 2.0 - 1.0
-            rand_bits2 = torch.randint(0, 2, (d,), generator=generator, device=device, dtype=torch.float32)
+            rand_bits2 = torch.randint(0, 2, (d,), generator=generator, device=generator.device if generator else device, dtype=torch.float32).to(device=device)
             signs2 = rand_bits2 * 2.0 - 1.0
             
             # Step 1: D2 @ H_hat
@@ -774,9 +780,14 @@ class HadamardDualBasisLinear(nn.Module):
         else:
             generator = None
             if seed is not None:
-                generator = torch.Generator(device="cpu")
-                generator.manual_seed(seed)
-            rand_bits = torch.randint(0, 2, (self.in_features,), generator=generator, device=weight.device, dtype=torch.float32)
+                gen_device = weight.device if ("cuda" in str(weight.device)) else "cpu"
+                try:
+                    generator = torch.Generator(device=gen_device)
+                    generator.manual_seed(seed)
+                except Exception:
+                    generator = torch.Generator(device="cpu")
+                    generator.manual_seed(seed)
+            rand_bits = torch.randint(0, 2, (self.in_features,), generator=generator, device=generator.device if generator else weight.device, dtype=torch.float32).to(device=weight.device)
             s = rand_bits * 2.0 - 1.0
             self.signs.copy_(s.to(device=self.signs.device, dtype=self.signs.dtype))
             
@@ -898,25 +909,26 @@ class HadamardDualBasisLinear(nn.Module):
         # 1. Compute effective rotated full-precision weight: W_tilde_fused = W_tilde_dequant + scaling * (B @ A)
         w_rot_dequant = self._dequantize_rotated(dtype=torch.float32)
         adapter_rot = (self.lora_B.float() @ self.lora_A.float()) * self.scaling
-        w_rot_fused = w_rot_dequant + adapter_rot
-        
-        # 2. Re-quantize fused weight in rotated Gaussian domain into 2-bit packed format
-        packed_bytes, a0, a1, orig_shape = Real2BitCodec.pack(w_rot_fused, group_size=self.group_size)
-        
-        if a0.dim() == 1 and self.a0.dim() == 2:
-            a0_buf = a0.unsqueeze(-1)
-            a1_buf = a1.unsqueeze(-1)
-        else:
-            a0_buf = a0
-            a1_buf = a1
+        if adapter_rot.abs().max() > 0:
+            w_rot_fused = w_rot_dequant + adapter_rot
             
-        self.packed_weights.copy_(packed_bytes)
-        self.a0.copy_(a0_buf.to(self.a0.dtype))
-        self.a1.copy_(a1_buf.to(self.a1.dtype))
-        
-        # 3. Zero out adapter parameters
-        self.lora_A.zero_()
-        self.lora_B.zero_()
+            # 2. Re-quantize fused weight in rotated Gaussian domain into 2-bit packed format
+            packed_bytes, a0, a1, orig_shape = Real2BitCodec.pack(w_rot_fused, group_size=self.group_size)
+            
+            if a0.dim() == 1 and self.a0.dim() == 2:
+                a0_buf = a0.unsqueeze(-1)
+                a1_buf = a1.unsqueeze(-1)
+            else:
+                a0_buf = a0
+                a1_buf = a1
+                
+            self.packed_weights.copy_(packed_bytes)
+            self.a0.copy_(a0_buf.to(self.a0.dtype))
+            self.a1.copy_(a1_buf.to(self.a1.dtype))
+            
+            # 3. Zero out adapter parameters
+            self.lora_A.zero_()
+            self.lora_B.zero_()
         self.is_merged = True
 
     @torch.no_grad()

@@ -1,4 +1,4 @@
-﻿"""
+"""
 M-2LRF Canonical Layer Module
 ==============================
 Exposes the flagship unified linear layer M2LRFUnifiedLinear alongside backwards-compatible

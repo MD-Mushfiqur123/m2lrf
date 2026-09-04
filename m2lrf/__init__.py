@@ -1,4 +1,4 @@
-﻿"""
+"""
 M-2LRF: Multi-Rate Low-Rank Factorization & 2-Bit Dual-Basis Engine
 ===================================================================
 Production Package:
@@ -20,10 +20,23 @@ from m2lrf.unified_layer import (
     M2LRF4BitLinear,
     M2LRFW2A8Linear,
     QuantizedLinearWithLoRA,
-    RealPacked2BitLinearLoRA
+    RealPacked2BitLinearLoRA,
+    W2A8Linear,
+    DynamicW2A8Linear,
+    QuantizedW2A8LinearWithLoRA
 )
-from m2lrf.quantizer import DualBasisQuantizer, DoubleQuantizer, SparseOutlierBuffer
-from m2lrf.packed_codec import Real2BitCodec, Packed2BitTensor
+from m2lrf.quantizer import (
+    DualBasisQuantizer,
+    DoubleQuantizer,
+    SparseOutlierBuffer,
+    LLOYD_MAX_A0,
+    LLOYD_MAX_A1,
+    LLOYD_MAX_TAU
+)
+from m2lrf.packed_codec import (
+    Real2BitCodec,
+    Packed2BitTensor
+)
 from m2lrf.mixed_precision import (
     Real4BitCodec,
     Quantized4BitLinearWithLoRA,
@@ -32,11 +45,12 @@ from m2lrf.mixed_precision import (
     MixedPrecisionAllocator,
     MixedPrecisionAllocationPlan,
     allocate_mixed_precision_model,
-    prepare_mixed_precision_m2lrf_model
+    prepare_mixed_precision_m2lrf_model,
+    NF4_CENTROIDS,
+    LLOYD_MAX_4BIT_CENTROIDS
 )
 from m2lrf.w2a8_kernel import (
-    W2A8Linear,
-    DynamicW2A8Linear,
+    DynamicInt8ActQuantSTE,
     quantize_activations_dynamic_int8,
     dequantize_activations_dynamic_int8,
     w2a8_integer_gemm,
@@ -67,11 +81,21 @@ from m2lrf.trainer_eval import (
     DEFAULT_EXCLUDE_MODULES,
     GSM8K_8SHOT_PROMPT
 )
+from m2lrf.triton_kernel import (
+    HAS_TRITON,
+    m2lrf_triton_matmul,
+    m2lrf_matmul_fallback
+)
+from m2lrf.deep_benchmark import (
+    Uniform4BitLinearLoRA,
+    run_benchmark_comparison
+)
 
 __version__ = "1.0.0"
 __author__ = "MD-Mushfiqur Rahim"
 
 __all__ = [
+    # Canonical Unified & Specialized Layers
     "M2LRFUnifiedLinear",
     "M2LRF2BitLinear",
     "HadamardDualBasisLinear",
@@ -79,27 +103,38 @@ __all__ = [
     "M2LRFW2A8Linear",
     "QuantizedLinearWithLoRA",
     "RealPacked2BitLinearLoRA",
-    "Real4BitCodec",
     "Quantized4BitLinearWithLoRA",
+    "QuantizedW2A8LinearWithLoRA",
+    "W2A8Linear",
+    "DynamicW2A8Linear",
+    # Quantizers, Codecs & Constants
+    "DualBasisQuantizer",
+    "DoubleQuantizer",
+    "SparseOutlierBuffer",
+    "LLOYD_MAX_A0",
+    "LLOYD_MAX_A1",
+    "LLOYD_MAX_TAU",
+    "Real2BitCodec",
+    "Packed2BitTensor",
+    "Real4BitCodec",
+    "NF4_CENTROIDS",
+    "LLOYD_MAX_4BIT_CENTROIDS",
+    # Sensitivity Profiling & Mixed Precision
     "LayerSensitivityProfiler",
     "SensitivityProfileResult",
     "MixedPrecisionAllocator",
     "MixedPrecisionAllocationPlan",
     "allocate_mixed_precision_model",
     "prepare_mixed_precision_m2lrf_model",
-    "W2A8Linear",
-    "DynamicW2A8Linear",
+    # W2A8 Kernel & Dynamic Activation Quantization
+    "DynamicInt8ActQuantSTE",
     "quantize_activations_dynamic_int8",
     "dequantize_activations_dynamic_int8",
     "w2a8_integer_gemm",
     "w2a8_matmul",
     "w2a8_matmul_fallback",
     "w2a8_triton_matmul",
-    "DualBasisQuantizer",
-    "DoubleQuantizer",
-    "SparseOutlierBuffer",
-    "Real2BitCodec",
-    "Packed2BitTensor",
+    # Fast Walsh-Hadamard Transform & Outlier Suppression
     "is_power_of_two",
     "fast_walsh_hadamard_transform",
     "block_fast_walsh_hadamard_transform",
@@ -112,11 +147,18 @@ __all__ = [
     "verify_hadamard_sqnr_gain",
     "generate_synthetic_heavy_tailed_weights",
     "convert_linear_to_hadamard_dual_basis",
+    # Model Conversion, Training & Evaluation
     "prepare_m2lrf_model",
     "RealTaskEvaluator",
     "ConversationTrainer",
     "get_model_device",
     "DEFAULT_TARGET_MODULES",
     "DEFAULT_EXCLUDE_MODULES",
-    "GSM8K_8SHOT_PROMPT"
+    "GSM8K_8SHOT_PROMPT",
+    # Triton Kernel & Micro-Benchmarks
+    "HAS_TRITON",
+    "m2lrf_triton_matmul",
+    "m2lrf_matmul_fallback",
+    "Uniform4BitLinearLoRA",
+    "run_benchmark_comparison"
 ]

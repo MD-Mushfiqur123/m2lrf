@@ -1,0 +1,110 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "m2lrf"
+version = "1.0.0"
+description = "2-Bit Dual-Basis Quantization & Fine-Tuning Engine with LoftQ SVD Initialization"
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "MIT" }
+authors = [
+    { name = "MD-Mushfiqur Rahim", email = "mushfiqur.research@gmail.com" }
+]
+maintainers = [
+    { name = "MD-Mushfiqur Rahim", email = "mushfiqur.research@gmail.com" }
+]
+keywords = [
+    "quantization",
+    "2-bit",
+    "dual-basis",
+    "loftq",
+    "svd",
+    "fine-tuning",
+    "llm",
+    "lora",
+    "pytorch",
+    "w2a8",
+    "hadamard",
+    "fwht",
+    "deep-learning",
+    "model-compression"
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+dependencies = [
+    "torch>=2.1.0",
+    "transformers>=4.36.0",
+    "accelerate>=0.26.0",
+    "scipy>=1.10.0",
+]
+
+[project.optional-dependencies]
+triton = [
+    "triton>=2.1.0; platform_system != 'Windows'",
+]
+bitsandbytes = [
+    "bitsandbytes>=0.41.0",
+]
+peft = [
+    "peft>=0.7.0",
+]
+reportlab = [
+    "reportlab>=4.0.0",
+]
+matplotlib = [
+    "matplotlib>=3.7.0",
+]
+all = [
+    "triton>=2.1.0; platform_system != 'Windows'",
+    "bitsandbytes>=0.41.0",
+    "peft>=0.7.0",
+    "reportlab>=4.0.0",
+    "matplotlib>=3.7.0",
+]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "ruff>=0.1.0",
+    "black>=23.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/MD-Mushfiqur123/m2lrf"
+Documentation = "https://github.com/MD-Mushfiqur123/m2lrf#readme"
+Repository = "https://github.com/MD-Mushfiqur123/m2lrf.git"
+Issues = "https://github.com/MD-Mushfiqur123/m2lrf/issues"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["m2lrf*"]
+exclude = ["tests*", "benchmarks*", "docs*"]
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = "-ra -q"
+testpaths = [
+    "tests",
+]
+
+[tool.black]
+line-length = 100
+target-version = ['py310', 'py311', 'py312']
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"

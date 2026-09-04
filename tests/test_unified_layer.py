@@ -1,4 +1,4 @@
-﻿"""
+"""
 Unit Tests for M-2LRF Grand Unified Linear Layer (M2LRFUnifiedLinear)
 =====================================================================
 Validates all composable features, bit-widths, rotation schemes, dynamic activations,

@@ -1,7 +1,11 @@
-﻿__pycache__/
+__pycache__/
 *.py[cod]
 *.class
 .pytest_cache/
 *.zip
 .DS_Store
 Thumbs.db
+*.egg-info/
+build/
+dist/
+.venv/

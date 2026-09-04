@@ -27,6 +27,16 @@ LLOYD_MAX_A1 = 1.5104181947
 LLOYD_MAX_TAU = 0.9815984178  # (LLOYD_MAX_A0 + LLOYD_MAX_A1) / 2.0
 
 
+__all__ = [
+    "LLOYD_MAX_A0",
+    "LLOYD_MAX_A1",
+    "LLOYD_MAX_TAU",
+    "SparseOutlierBuffer",
+    "DoubleQuantizer",
+    "DualBasisQuantizer",
+]
+
+
 class SparseOutlierBuffer:
     """
     Compact sparse representation for statistical weight outliers (> 3.5 sigma).

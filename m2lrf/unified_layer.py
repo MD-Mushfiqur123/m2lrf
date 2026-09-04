@@ -330,7 +330,7 @@ class M2LRFUnifiedLinear(nn.Module):
         else:
             x_adapted = self.lora_dropout(x_work)
             lora_out = F.linear(
-                F.linear(x_adapted.float(), self.lora_A),
+                F.linear(x_adapted.to(self.lora_A.dtype), self.lora_A),
                 self.lora_B
             ).to(x.dtype) * self.scaling
             out = base_out + lora_out
@@ -345,8 +345,14 @@ class M2LRFUnifiedLinear(nn.Module):
         """
         Fuses the trained LoRA adapter permanently into the packed base weights (Zero-Overhead).
         """
-        if not self.is_merged and self.rank > 0 and self.lora_A is not None and self.lora_B is not None:
-            delta = (self.lora_B @ self.lora_A) * self.scaling
+        if self.is_merged:
+            return
+        if self.rank <= 0 or self.lora_A is None or self.lora_B is None:
+            self.is_merged = True
+            return
+
+        delta = (self.lora_B @ self.lora_A) * self.scaling
+        if delta.abs().max() > 0:
             w_working = self._dequantize_base(dtype=torch.float32) + delta.float()
             
             if self.use_hadamard:
@@ -359,7 +365,7 @@ class M2LRFUnifiedLinear(nn.Module):
 
             self.lora_A.zero_()
             self.lora_B.zero_()
-            self.is_merged = True
+        self.is_merged = True
 
     @torch.no_grad()
     def unmerge(self):
@@ -386,6 +392,9 @@ class M2LRFUnifiedLinear(nn.Module):
                 total += self.a0_super_scale.numel() * self.a0_super_scale.element_size()
             if self.a1_super_scale is not None:
                 total += self.a1_super_scale.numel() * self.a1_super_scale.element_size()
+            if self.sparse_outliers is not None:
+                total += self.sparse_outliers.indices.numel() * self.sparse_outliers.indices.element_size()
+                total += self.sparse_outliers.values.numel() * self.sparse_outliers.values.element_size()
         else:
             total += self.scales.numel() * self.scales.element_size()
 
@@ -408,6 +417,9 @@ class M2LRFUnifiedLinear(nn.Module):
                 base_bytes += self.a0_super_scale.numel() * self.a0_super_scale.element_size()
             if self.a1_super_scale is not None:
                 base_bytes += self.a1_super_scale.numel() * self.a1_super_scale.element_size()
+            if self.sparse_outliers is not None:
+                base_bytes += self.sparse_outliers.indices.numel() * self.sparse_outliers.indices.element_size()
+                base_bytes += self.sparse_outliers.values.numel() * self.sparse_outliers.values.element_size()
         else:
             base_bytes += self.scales.numel() * self.scales.element_size()
         return (base_bytes * 8.0) / max(self.total_base_parameters, 1)
@@ -563,3 +575,20 @@ class M2LRFW2A8Linear(M2LRFUnifiedLinear):
 
 QuantizedLinearWithLoRA = M2LRF2BitLinear
 RealPacked2BitLinearLoRA = M2LRF2BitLinear
+W2A8Linear = M2LRFW2A8Linear
+DynamicW2A8Linear = M2LRFW2A8Linear
+QuantizedW2A8LinearWithLoRA = M2LRFW2A8Linear
+
+
+__all__ = [
+    "M2LRFUnifiedLinear",
+    "M2LRF2BitLinear",
+    "HadamardDualBasisLinear",
+    "M2LRF4BitLinear",
+    "M2LRFW2A8Linear",
+    "QuantizedLinearWithLoRA",
+    "RealPacked2BitLinearLoRA",
+    "W2A8Linear",
+    "DynamicW2A8Linear",
+    "QuantizedW2A8LinearWithLoRA",
+]

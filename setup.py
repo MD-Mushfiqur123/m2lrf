@@ -1,20 +1,52 @@
-﻿from setuptools import setup, find_packages
+from setuptools import setup, find_packages
 
 setup(
     name="m2lrf",
     version="1.0.0",
     description="2-Bit Dual-Basis Quantization & Fine-Tuning Engine with LoftQ SVD Initialization",
-    author="MD-Mushfiqur Rahim (M) & Agent L",
-    packages=find_packages(),
+    author="MD-Mushfiqur Rahim",
+    author_email="mushfiqur.research@gmail.com",
+    packages=find_packages(exclude=["tests*", "benchmarks*", "docs*"]),
     install_requires=[
-        "torch>=2.0.0",
+        "torch>=2.1.0",
         "transformers>=4.36.0",
         "accelerate>=0.26.0",
-        "scipy>=1.10.0"
+        "scipy>=1.10.0",
     ],
+    extras_require={
+        "triton": ["triton>=2.1.0; platform_system != 'Windows'"],
+        "bitsandbytes": ["bitsandbytes>=0.41.0"],
+        "peft": ["peft>=0.7.0"],
+        "reportlab": ["reportlab>=4.0.0"],
+        "matplotlib": ["matplotlib>=3.7.0"],
+        "all": [
+            "triton>=2.1.0; platform_system != 'Windows'",
+            "bitsandbytes>=0.41.0",
+            "peft>=0.7.0",
+            "reportlab>=4.0.0",
+            "matplotlib>=3.7.0",
+        ],
+        "dev": [
+            "pytest>=7.0.0",
+            "pytest-cov>=4.0.0",
+            "ruff>=0.1.0",
+            "black>=23.0.0",
+        ],
+    },
     classifiers=[
+        "Development Status :: 4 - Beta",
+        "Intended Audience :: Science/Research",
+        "Intended Audience :: Developers",
+        "License :: OSI Approved :: MIT License",
+        "Operating System :: OS Independent",
         "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
+        "Topic :: Software Development :: Libraries :: Python Modules",
     ],
     python_requires=">=3.8",
 )

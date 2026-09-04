@@ -1,4 +1,4 @@
-﻿# ====================================================================================================
+# ====================================================================================================
 # 🧪 M-2LRF 100% STANDALONE 1-CELL TEST & VERIFICATION ENGINE (ZERO IMPORT ERRORS)
 # Hardware: Google Colab (T4 / A100 / L4 GPU)
 # Target Model: Qwen/Qwen2.5-0.5B-Instruct

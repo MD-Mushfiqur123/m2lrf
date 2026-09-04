@@ -64,14 +64,15 @@ def quantize_activations_dynamic_int8(
         s_x: Per-token FP16/FP32 scale tensor of shape [..., 1]
     """
     orig_dtype = x.dtype
-    x_f = x.float()
+    calc_dtype = torch.float64 if orig_dtype == torch.float64 else torch.float32
+    x_f = x.to(calc_dtype)
     
     # Compute per-token max absolute value along hidden dimension K
     max_abs = torch.amax(torch.abs(x_f), dim=-1, keepdim=True)
     s_x = torch.clamp(max_abs / 127.0, min=eps).to(orig_dtype)
     
     # Scale, round, clamp to [-127, 127]
-    s_x_f = s_x.float()
+    s_x_f = s_x.to(calc_dtype)
     x_scaled = x_f / s_x_f
     x_int8 = torch.clamp(torch.round(x_scaled), -127, 127).to(torch.int8)
     
