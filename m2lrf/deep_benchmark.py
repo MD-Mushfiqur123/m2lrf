@@ -7,7 +7,12 @@ Automated controlled comparison between:
   3. M-2LRF 2-Bit Packed + LoftQ SVD Residual Initialization
 """
 
-import os, sys, math, time, gc, json
+import os
+import sys
+import math
+import time
+import gc
+import json
 from typing import Dict, Any, Optional
 import torch
 import torch.nn as nn
@@ -74,12 +79,14 @@ def run_benchmark_comparison(
     if device is None:
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-    w_orig = torch.randn(out_features, in_features, dtype=torch.float16, device=device)
-    x = torch.randn(batch_size, seq_len, in_features, dtype=torch.float16, device=device)
-    target = torch.randn(batch_size, seq_len, out_features, dtype=torch.float16, device=device)
+    dtype = torch.float16 if (device.type == "cuda" and torch.cuda.is_available()) else torch.float32
 
-    # 1. FP16 Baseline
-    linear_fp16 = nn.Linear(in_features, out_features, bias=False).to(device)
+    w_orig = torch.randn(out_features, in_features, dtype=dtype, device=device)
+    x = torch.randn(batch_size, seq_len, in_features, dtype=dtype, device=device)
+    target = torch.randn(batch_size, seq_len, out_features, dtype=dtype, device=device)
+
+    # 1. FP16 Baseline (Matched dtype and device)
+    linear_fp16 = nn.Linear(in_features, out_features, bias=False).to(device=device, dtype=dtype)
     linear_fp16.weight.data.copy_(w_orig)
     opt_fp16 = torch.optim.AdamW(linear_fp16.parameters(), lr=2e-4)
 
@@ -121,8 +128,16 @@ def run_benchmark_comparison(
     time_2b = time.time() - t0
 
     return {
+        "device": str(device),
+        "dtype": str(dtype),
+        "steps": steps,
         "time_fp16_s": round(time_fp16, 3),
         "time_4bit_s": round(time_4b, 3),
         "time_m2lrf_2bit_s": round(time_2b, 3),
         "speedup_over_fp16": round(time_fp16 / time_2b, 2) if time_2b > 0 else 0.0
     }
+
+
+if __name__ == "__main__":
+    results = run_benchmark_comparison()
+    print(json.dumps(results, indent=2))
