@@ -9,10 +9,18 @@ Production Package:
   - prepare_m2lrf_model: Universal model converter for transformer architectures.
 """
 
-from m2lrf.quantizer import DualBasisQuantizer
-from m2lrf.packed_codec import Real2BitCodec
-from m2lrf.layer import M2LRF2BitLinear, QuantizedLinearWithLoRA
-from m2lrf.trainer_eval import prepare_m2lrf_model
+from m2lrf.quantizer import DualBasisQuantizer, DoubleQuantizer, SparseOutlierBuffer
+from m2lrf.packed_codec import Real2BitCodec, Packed2BitTensor
+from m2lrf.layer import M2LRF2BitLinear, QuantizedLinearWithLoRA, RealPacked2BitLinearLoRA
+from m2lrf.trainer_eval import (
+    prepare_m2lrf_model,
+    RealTaskEvaluator,
+    ConversationTrainer,
+    get_model_device,
+    DEFAULT_TARGET_MODULES,
+    DEFAULT_EXCLUDE_MODULES,
+    GSM8K_8SHOT_PROMPT
+)
 
 __version__ = "1.0.0"
 __author__ = "MD-Mushfiqur Rahim"
@@ -20,7 +28,19 @@ __author__ = "MD-Mushfiqur Rahim"
 __all__ = [
     "M2LRF2BitLinear",
     "QuantizedLinearWithLoRA",
+    "RealPacked2BitLinearLoRA",
     "DualBasisQuantizer",
+    "DoubleQuantizer",
+    "SparseOutlierBuffer",
     "Real2BitCodec",
-    "prepare_m2lrf_model"
+    "Packed2BitTensor",
+    "prepare_m2lrf_model",
+    "RealTaskEvaluator",
+    "ConversationTrainer",
+    "get_model_device",
+    "DEFAULT_TARGET_MODULES",
+    "DEFAULT_EXCLUDE_MODULES",
+    "GSM8K_8SHOT_PROMPT"
 ]
+
+
