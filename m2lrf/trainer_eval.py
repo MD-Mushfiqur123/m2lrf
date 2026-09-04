@@ -28,6 +28,7 @@ import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader
 
 from m2lrf.layer import M2LRF2BitLinear
+from m2lrf.w2a8_kernel import M2LRFW2A8Linear
 
 
 def get_model_device(model: nn.Module) -> torch.device:
@@ -73,11 +74,15 @@ def prepare_m2lrf_model(
     lora_dropout: float = 0.0,
     group_size: Optional[int] = None,
     freeze_bias: bool = True,
+    target_avg_bits: Optional[float] = None,
+    calibration_data: Optional[Any] = None,
+    metric: str = "fisher",
+    use_w2a8: bool = False,
     verbose: bool = True
 ) -> nn.Module:
     """
     Surgically replaces targeted Linear / Conv1D layers across Attention and MLP blocks
-    with M2LRF2BitLinear (True 2-bit packed storage with LoftQ SVD Residual Initialization).
+    with M2LRF2BitLinear or M2LRFW2A8Linear (True 2-bit packed storage with LoftQ SVD Residual Initialization).
 
     Args:
         model: Pretrained PyTorch foundation model (Llama, Qwen, Mistral, Gemma, GPT-2, Falcon, etc.)
@@ -89,11 +94,33 @@ def prepare_m2lrf_model(
         lora_dropout: Dropout probability for the LoRA adapter branch.
         group_size: Optional sub-channel group size for group-wise scaling.
         freeze_bias: Whether to freeze layer biases.
+        target_avg_bits: Optional target average bitrate for mixed precision (e.g. 2.6 bpp).
+        calibration_data: Optional calibration data for sensitivity profiling.
+        metric: Sensitivity metric ('fisher', 'gradient', 'mse', 'heuristic').
         verbose: Whether to print diagnostic conversion summary.
 
     Returns:
-        The surgically converted model with frozen 2-bit weights and trainable LoRA adapters.
+        The surgically converted model with frozen quantized weights and trainable LoRA adapters.
     """
+    # Delegate to mixed precision engine if target_avg_bits is specified and > 2.0
+    if target_avg_bits is not None and target_avg_bits > 2.0:
+        from m2lrf.mixed_precision import prepare_mixed_precision_m2lrf_model
+        return prepare_mixed_precision_m2lrf_model(
+            model=model,
+            target_avg_bits=target_avg_bits,
+            rank=rank,
+            alpha=alpha,
+            calibration_data=calibration_data,
+            metric=metric,
+            target_modules=target_modules,
+            exclude_modules=exclude_modules,
+            loftq_iters=loftq_iters,
+            lora_dropout=lora_dropout,
+            group_size=group_size,
+            freeze_bias=freeze_bias,
+            verbose=verbose
+        )
+
     if target_modules is None or target_modules == "all" or target_modules == "all-linear":
         target_patterns = DEFAULT_TARGET_MODULES
     elif isinstance(target_modules, str):
@@ -171,8 +198,9 @@ def prepare_m2lrf_model(
         packed_base_bytes += layer_packed_bytes
         lora_adapter_bytes += layer_lora_bytes
 
-        # Instantiate M2LRF2BitLinear layer
-        m2_layer = M2LRF2BitLinear(
+        # Instantiate M2LRFW2A8Linear or M2LRF2BitLinear layer
+        layer_cls = M2LRFW2A8Linear if use_w2a8 else M2LRF2BitLinear
+        m2_layer = layer_cls(
             in_features=in_features,
             out_features=out_features,
             rank=rank,
