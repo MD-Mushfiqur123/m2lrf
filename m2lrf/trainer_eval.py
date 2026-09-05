@@ -452,12 +452,14 @@ class RealTaskEvaluator:
         if text_or_dataset is None:
             try:
                 from datasets import load_dataset
-                raw = load_dataset("wikitext", "wikitext-2-raw-v1", split="test")
+                try:
+                    raw = load_dataset("Salesforce/wikitext", "wikitext-2-raw-v1", split="test")
+                except Exception:
+                    raw = load_dataset("wikitext", "wikitext-2-raw-v1", split="test")
                 text = "\n\n".join([x["text"] for x in raw if x["text"].strip()])
                 encodings = tokenizer(text, return_tensors="pt")
             except Exception as e:
-                if verbose:
-                    print(f"[*] Note: WikiText-2 dataset loading fallback to synthetic corpus ({e})")
+                print(f"⚠️ WARNING: WikiText-2 load failed ({e}), falling back to synthetic corpus — results NOT representative!")
                 sample_text = (
                     "The quick brown fox jumps over the lazy dog. "
                     "In mathematics and computer science, multi-rate low-rank factorization provides "

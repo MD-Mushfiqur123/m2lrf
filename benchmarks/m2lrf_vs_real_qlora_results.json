@@ -1,0 +1,61 @@
+{
+  "metadata": {
+    "model_id": "gpt2",
+    "device": "cpu",
+    "rank": 16,
+    "alpha": 16.0,
+    "steps": 3,
+    "group_size": 128,
+    "batch_size": 2,
+    "seq_len": 128,
+    "learning_rate": 0.0002,
+    "timestamp": "2026-09-05 09:10:36"
+  },
+  "real_qlora_nf4": {
+    "method": "Real QLoRA (NF4 4-bit + Double Quant)",
+    "base_bitrate_bpp": 4.0,
+    "static_vram_mb": 0.0,
+    "peak_training_vram_mb": 0.0,
+    "model_loading_time_s": 1.24,
+    "training_time_s": 2.64,
+    "ms_per_step": 880.21,
+    "total_parameters": 126799104,
+    "trainable_parameters": 2359296,
+    "step_0_loss": 3.272,
+    "step_final_loss": 12.0687,
+    "loss_reduction": -8.7967,
+    "loss_trajectory": [
+      12.3164,
+      12.4762,
+      12.0687
+    ],
+    "val_loss": 3.2685,
+    "val_ppl": 26.27,
+    "gen_tokens_per_sec": 23.57,
+    "avg_ttft_ms": 65.3
+  },
+  "m2lrf_2bit_loftq": {
+    "method": "M-2LRF 2-Bit (Dual-Basis + LoftQ SVD)",
+    "base_bitrate_bpp": 2.0,
+    "group_size": 128,
+    "static_vram_mb": 0.0,
+    "peak_training_vram_mb": 0.0,
+    "model_loading_time_s": 3.77,
+    "training_time_s": 4.17,
+    "ms_per_step": 1391.63,
+    "total_parameters": 41864448,
+    "trainable_parameters": 2359296,
+    "step_0_loss": 7.2621,
+    "step_final_loss": 12.0333,
+    "loss_reduction": -4.7712,
+    "loss_trajectory": [
+      13.762,
+      12.4763,
+      12.0333
+    ],
+    "val_loss": 7.14,
+    "val_ppl": 1261.42,
+    "gen_tokens_per_sec": 2.21,
+    "avg_ttft_ms": 489.43
+  }
+}

@@ -51,6 +51,11 @@ project_root = str(Path(__file__).resolve().parent.parent)
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
+try:
+    sys.stdout.reconfigure(line_buffering=True)
+except Exception:
+    pass
+
 from transformers import (
     AutoModelForCausalLM,
     AutoTokenizer,
@@ -134,23 +139,28 @@ class BenchmarkTextDataset(Dataset):
         return {"input_ids": x, "attention_mask": torch.ones_like(x), "labels": x.clone()}
 
 
-def load_wikitext_validation_tokens(tokenizer, max_tokens: int = 4096) -> torch.Tensor:
+def load_wikitext_validation_tokens(tokenizer, max_tokens: int = 256) -> torch.Tensor:
     """Loads a slice of WikiText-2 validation split or fallback standard text corpus."""
+    max_tokens = min(max_tokens, 256)
     try:
         from datasets import load_dataset
-        raw = load_dataset("wikitext", "wikitext-2-raw-v1", split="validation")
-        full_text = "\n\n".join([x["text"] for x in raw if x["text"].strip()])
-        tokens = tokenizer(full_text, return_tensors="pt")["input_ids"][:, :max_tokens]
+        try:
+            raw = load_dataset("Salesforce/wikitext", "wikitext-2-raw-v1", split="validation")
+        except Exception:
+            raw = load_dataset("wikitext", "wikitext-2-raw-v1", split="validation")
+        full_text = "\n\n".join([x["text"] for x in raw if x["text"].strip()][:50])
+        tokens = tokenizer(full_text, return_tensors="pt", max_length=max_tokens, truncation=True)["input_ids"]
         return tokens
     except Exception as e:
+        print(f"⚠️ WARNING: WikiText-2 load failed ({e}), falling back to degenerate repeated text — results NOT representative!")
         # Standard fallback representative corpus
         fallback_corpus = (
             "The multi-rate low-rank factorization framework enables extreme weight quantization "
             "down to two bits per parameter while maintaining high spectral fidelity across large language models. "
             "By decomposing weight matrices into disjoint ternary basis tensors and applying truncated SVD "
             "residual initialization, quantization error is captured in trainable low-rank adapters. "
-        ) * 40
-        tokens = tokenizer(fallback_corpus, return_tensors="pt")["input_ids"][:, :max_tokens]
+        ) * 10
+        tokens = tokenizer(fallback_corpus, return_tensors="pt", max_length=max_tokens, truncation=True)["input_ids"]
         return tokens
 
 
@@ -273,9 +283,11 @@ def benchmark_generation_throughput(
     pad_id = tokenizer.pad_token_id if tokenizer.pad_token_id is not None else tokenizer.eos_token_id
 
     # Warmup runs
+    warmup_tok_count = min(gen_tokens, 4 if device.type == "cpu" else 16)
+    warmup_count = 1 if device.type == "cpu" else warmup_runs
     with torch.no_grad():
-        for _ in range(warmup_runs):
-            _ = model.generate(**inputs, max_new_tokens=16, pad_token_id=pad_id, do_sample=False)
+        for _ in range(warmup_count):
+            _ = model.generate(**inputs, max_new_tokens=warmup_tok_count, pad_token_id=pad_id, do_sample=False)
 
     if torch.cuda.is_available():
         torch.cuda.synchronize()
@@ -355,12 +367,14 @@ def run_real_qlora_trial(
     tokenizer = load_base_tokenizer(model_id)
     target_modules = resolve_target_modules(model_id)
 
+    compute_dtype = torch.float16 if device.type == "cuda" else torch.float32
+
     # 4-bit NF4 Quantization Configuration
     bnb_config = BitsAndBytesConfig(
         load_in_4bit=True,
         bnb_4bit_quant_type="nf4",
         bnb_4bit_use_double_quant=True,
-        bnb_4bit_compute_dtype=torch.float16
+        bnb_4bit_compute_dtype=compute_dtype
     )
 
     t_load_0 = time.time()
@@ -374,24 +388,29 @@ def run_real_qlora_trial(
                     device_map="auto"
                 )
             except Exception:
-                config = GPT2Config(vocab_size=50257, n_embd=768, n_layer=12, n_head=12)
-                model = GPT2LMHeadModel(config).to(torch.float16).to(device)
+                model = GPT2LMHeadModel.from_pretrained("gpt2").to(compute_dtype).to(device)
         else:
-            config = GPT2Config(vocab_size=50257, n_embd=768, n_layer=12, n_head=12)
-            model = GPT2LMHeadModel(config).to(torch.float16).to(device)
+            try:
+                model = GPT2LMHeadModel.from_pretrained("gpt2").to(compute_dtype).to(device)
+            except Exception:
+                config = GPT2Config(vocab_size=50257, n_embd=768, n_layer=12, n_head=12)
+                model = GPT2LMHeadModel(config).to(compute_dtype).to(device)
     else:
         try:
             model = AutoModelForCausalLM.from_pretrained(
                 model_id,
-                quantization_config=bnb_config,
+                quantization_config=bnb_config if (device.type == "cuda" and HAS_BNB) else None,
                 device_map="auto" if device.type == "cuda" else None,
-                torch_dtype=torch.float16,
+                torch_dtype=compute_dtype,
                 trust_remote_code=True
             )
         except Exception as e:
             print(f"[*] Warning: Could not load remote model '{model_id}' directly ({e}). Initializing benchmark fallback.")
-            config = GPT2Config(vocab_size=50257, n_embd=768, n_layer=12, n_head=12)
-            model = GPT2LMHeadModel(config).to(torch.float16).to(device)
+            try:
+                model = GPT2LMHeadModel.from_pretrained("gpt2").to(compute_dtype).to(device)
+            except Exception:
+                config = GPT2Config(vocab_size=50257, n_embd=768, n_layer=12, n_head=12)
+                model = GPT2LMHeadModel(config).to(compute_dtype).to(device)
             target_modules = ["c_attn", "c_proj"]
 
     # Wrap with PEFT LoRA
@@ -533,21 +552,28 @@ def run_m2lrf_trial(
     target_modules = resolve_target_modules(model_id)
 
     t_load_0 = time.time()
+    compute_dtype = torch.float16 if device.type == "cuda" else torch.float32
     if model_id.lower() == "gpt2":
-        config = GPT2Config(vocab_size=50257, n_embd=768, n_layer=12, n_head=12)
-        model = GPT2LMHeadModel(config).to(torch.float16).to(device)
+        try:
+            model = GPT2LMHeadModel.from_pretrained("gpt2").to(compute_dtype).to(device)
+        except Exception:
+            config = GPT2Config(vocab_size=50257, n_embd=768, n_layer=12, n_head=12)
+            model = GPT2LMHeadModel(config).to(compute_dtype).to(device)
     else:
         try:
             model = AutoModelForCausalLM.from_pretrained(
                 model_id,
-                torch_dtype=torch.float16,
+                torch_dtype=compute_dtype,
                 device_map="auto" if device.type == "cuda" else None,
                 trust_remote_code=True
             )
         except Exception as e:
             print(f"[*] Warning: Could not load remote model '{model_id}' directly ({e}). Initializing benchmark fallback.")
-            config = GPT2Config(vocab_size=50257, n_embd=768, n_layer=12, n_head=12)
-            model = GPT2LMHeadModel(config).to(torch.float16).to(device)
+            try:
+                model = GPT2LMHeadModel.from_pretrained("gpt2").to(compute_dtype).to(device)
+            except Exception:
+                config = GPT2Config(vocab_size=50257, n_embd=768, n_layer=12, n_head=12)
+                model = GPT2LMHeadModel(config).to(compute_dtype).to(device)
             target_modules = ["c_attn", "c_proj"]
 
     # Convert Linear/Conv1D layers to M-2LRF 2-Bit with LoftQ SVD Residual
