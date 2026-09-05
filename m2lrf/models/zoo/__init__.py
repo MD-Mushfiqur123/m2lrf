@@ -178,6 +178,12 @@ from m2lrf.models.zoo.chatglm import (
     ChatGLMModel,
     ChatGLMForCausalLM,
 )
+from m2lrf.models.zoo.deepseek_v3 import DeepSeekV3Config, DeepSeekV3ForCausalLM
+from m2lrf.models.zoo.qwen2_vl import Qwen2VLConfig, Qwen2VLForConditionalGeneration
+from m2lrf.models.zoo.phi4 import Phi4Config, Phi4ForCausalLM
+from m2lrf.models.zoo.whisper import WhisperConfig, WhisperForConditionalGeneration
+from m2lrf.models.zoo.command_r import CommandRConfig, CommandRForCausalLM
+from m2lrf.models.zoo.flux import FluxConfig, FluxTransformer
 
 __all__ = [
     "LLaMAConfig",
@@ -246,4 +252,17 @@ __all__ = [
     "ChatGLMConfig",
     "ChatGLMModel",
     "ChatGLMForCausalLM",
+    "DeepSeekV3Config",
+    "DeepSeekV3ForCausalLM",
+    "Qwen2VLConfig",
+    "Qwen2VLForConditionalGeneration",
+    "Phi4Config",
+    "Phi4ForCausalLM",
+    "WhisperConfig",
+    "WhisperForConditionalGeneration",
+    "CommandRConfig",
+    "CommandRForCausalLM",
+    "FluxConfig",
+    "FluxTransformer",
 ]
+
