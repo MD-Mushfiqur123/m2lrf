@@ -53,7 +53,7 @@
    - 9.1 Quantization Error Distribution and Spectral Decay
    - 9.2 Comparative Analysis with Contemporary Methods (AQLM, QuIP#, BitNet, LoftQ)
    - 9.3 Threats to Validity & Known Limitations
-   - 9.4 Roadmap for Surpassing 4-Bit QLoRA on 7B+ Models
+   - 9.4 Architectural Roadmap (Future Work — Planned Engineering)
 10. [Complete Reference Implementation & API Specification](#10-complete-reference-implementation--api-specification)
     - 10.1 `DualBasisQuantizer` Python Implementation
     - 10.2 `M2LRF2BitLinear` Module Implementation
@@ -73,6 +73,24 @@ $$\mathbf{W} \approx \alpha_0 \mathbf{T}_0 + \alpha_1 \mathbf{T}_1, \quad \text{
 Where the scaling parameters $\alpha_0^* \approx 0.4528\sigma$ and $\alpha_1^* \approx 1.5104\sigma$ achieve the theoretical optimal Lloyd-Max Signal-to-Quantization-Noise Ratio ($\text{SQNR} \approx 9.30\text{ dB}$) for Gaussian distributions.
 
 To compensate for the quantization residual $\mathbf{R} = \mathbf{W} - \mathbf{W}_{\text{base}}$, M-2LRF utilizes truncated Singular Value Decomposition (SVD) to initialize Low-Rank Adaptation (LoRA) adapters directly from the principal components of $\mathbf{R}$. Weights are packed at 4 values per `uint8` byte and decoded dynamically in GPU registers via a fused Triton GEMM kernel, achieving an $87.5\%$ reduction in static weight memory.
+
+### 1.1 Empirical Scope: Verified Measurements vs. Analytical Projections
+
+To maintain absolute scientific rigor, this monograph explicitly distinguishes between verified empirical measurements and analytical projections:
+
+- **Empirically Measured & Verified (This Work):**
+  1. **Quantizer & Coding Theory:** Disjointness invariant ($\mathbf{T}_0 \odot \mathbf{T}_1 = \mathbf{0}$), closed-form Lloyd-Max centroids, and 2-bit packing codec verified across 93 unit tests.
+  2. **8-Way Systematic Ablation:** Measured across all 48 projection layers of pretrained GPT-2 (124M), demonstrating progression from $8.72	ext{ dB}$ (baseline) to $9.41	ext{ dB}$ (FWHT + DQ) and $10.10	ext{ dB}$ (LoftQ $r=32$).
+  3. **Outlier Dispersion Correlation:** Evaluated across 48 GPT-2 layers and 10 synthetic distributions ($N=58$), proving Spearman rank correlation $\mathbf{ho = 0.8723}$ ($p = 4.77 	imes 10^{-19}$) between weight kurtosis and FWHT SQNR recovery.
+  4. **Language Modeling Perplexity:** Measured on WikiText-2 validation tokens (GPT-2 124M), showing a $9.46	imes$ perplexity reduction ($9,635.00 	o 1,018.51$) with LoftQ SVD residual initialization.
+  5. **In-Situ Weight Merge Fidelity:** Measured Frobenius relative error of $14.44\%$ across 48 projection layers with zero runtime latency overhead.
+  6. **Fused Triton GEMM Kernel:** Measured on NVIDIA Tesla T4 GPU (Google Colab), delivering a $1.63	imes$ speedup over BitsAndBytes NF4 during token generation.
+
+- **Analytical Projections & Future Work:**
+  1. **Model Parameter Sizing (0.5B to 8B):** Analytical memory calculations derived from model architecture specifications.
+  2. **Hardware Sizing Projections:** Theoretical memory footprints for 32B/70B models on 24GB GPUs.
+  3. **Complex Reasoning Benchmarks (GSM8K, ARC, MMLU):** Require instruction-tuned 7B+ architectures and are designated for dedicated multi-GPU cluster runs.
+  4. **Architectural Roadmap (Section 9.4):** Future engineering framework for scaling to 7B–70B models.
 
 ```
 +-----------------------------------------------------------------------------------+
@@ -682,9 +700,11 @@ Quantization distortion acts as an additive error term $\mathbf{E} = \mathbf{W} 
 2. **Context Length Scaling:** Activation memory scales with sequence length $S$; extreme long-context training ($S \ge 32k$) requires activation offloading or ring-attention partitioning.
 3. **Outlier Channel Sensitivity:** In models exceeding 70B parameters, emergent outlier activation channels require per-channel scaling to prevent dynamic range clipping.
 
-## 9.4 Roadmap for Surpassing 4-Bit QLoRA on 7B+ Models
+## 9.4 Architectural Roadmap: Scaling to 7B+ Models (Future Work — Planned Engineering)
 
-To transition M-2LRF from an experimental 2-bit quantization primitive to an industry-standard framework that consistently matches or outperforms 4-bit NF4 QLoRA across large foundation models ($7\text{B}, 14\text{B}, 32\text{B}, 70\text{B}+$ parameters), we articulate a comprehensive development roadmap anchored on **Four Architectural Pillars**:
+*(Note: The following architectural roadmap describes future engineering milestones and planned implementations for scaling M-2LRF to 7B–70B parameters on high-compute multi-GPU clusters. These represent proposed targets and design specifications, rather than current experimental results).*
+
+To transition M-2LRF from a validated 2-bit post-training primitive to an industry-standard framework matching 4-bit NF4 QLoRA across large foundation models ($7\text{B}, 14\text{B}, 32\text{B}, 70\text{B}+$ parameters), we articulate a comprehensive development roadmap anchored on **Four Architectural Pillars**:
 
 ```
 +-------------------------------------------------------------------------------------------------+
