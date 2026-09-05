@@ -56,7 +56,7 @@ Evaluation across 48 real transformer layers and 10 controlled synthetic heavy-t
 - **Spearman Rank Correlation ($\rho$):** $\mathbf{0.8723}$ ($p = 4.77 \times 10^{-19}$)
 - **Self-Attention Subgroup Correlation:** $\mathbf{\rho = 0.9473}$ ($p = 2.34 \times 10^{-12}$, Log-fit $R^2 = 0.719$)
 - **MLP Block Subgroup Correlation:** $\mathbf{\rho = 0.8829}$ ($p = 1.13 \times 10^{-8}$, Log-fit $R^2 = 0.709$)
-- **Mean Kurtosis Reduction:** Pre-rotation $\bar{\kappa}_0 = 78.60 \longrightarrow$ Post-rotation $\bar{\kappa}_1 = 0.12$
+- **Mean Kurtosis Reduction:** Real 48 layers: $\bar{\kappa}_0 = 61.42 \longrightarrow \bar{\kappa}_1 = 1.61$ (Combined real + synthetic: $\bar{\kappa}_0 = 78.60 \to \bar{\kappa}_1 = 0.12$)
 - **Peak Outlier Layer:** `transformer.h.0.attn.c_proj.weight` ($\kappa_0 = 25.79 \to \kappa_1 = 0.59$, SQNR lift: $+5.97\text{ dB}$).
 
 *Source telemetry: `benchmarks/real_weights_sqnr_results.json`, `benchmarks/kurtosis_sensitivity_results.json`*
