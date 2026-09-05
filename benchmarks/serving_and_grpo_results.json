@@ -1,0 +1,47 @@
+{
+  "timestamp": 1788621208.5242622,
+  "serving": {
+    "serving_status": "success",
+    "non_stream_latency_ms": 251.51,
+    "ttft_ms": 16.0,
+    "stream_duration_ms": 191.09,
+    "kv_cache_utilization": 0.0,
+    "throughput_tokens_per_sec": 42.39,
+    "total_tokens_generated": 32
+  },
+  "grpo": {
+    "grpo_status": "success",
+    "steps_executed": 3,
+    "initial_loss": 0.0,
+    "final_loss": 0.0,
+    "trajectory": [
+      {
+        "policy_loss": 0.0,
+        "kl_divergence": 0.0,
+        "total_loss": 0.0,
+        "mean_ratio": 1.0,
+        "step": 1,
+        "mean_reward": 0.3500000238418579,
+        "reward_std": 0.9086882472038269
+      },
+      {
+        "policy_loss": 0.0,
+        "kl_divergence": 0.0,
+        "total_loss": 0.0,
+        "mean_ratio": 1.0,
+        "step": 2,
+        "mean_reward": 0.3500000238418579,
+        "reward_std": 0.9086882472038269
+      },
+      {
+        "policy_loss": 0.0,
+        "kl_divergence": 0.0,
+        "total_loss": 0.0,
+        "mean_ratio": 1.0,
+        "step": 3,
+        "mean_reward": 0.3500000238418579,
+        "reward_std": 0.9086882472038269
+      }
+    ]
+  }
+}

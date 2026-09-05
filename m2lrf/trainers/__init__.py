@@ -1,4 +1,4 @@
-﻿"""
+"""
 M-2LRF Training Paradigms (Axolotl-Inspired)
 ==============================================
 """
@@ -6,9 +6,13 @@ M-2LRF Training Paradigms (Axolotl-Inspired)
 from m2lrf.trainers.sft_trainer import M2LRFSFTTrainer
 from m2lrf.trainers.dpo_trainer import M2LRFDPOTrainer
 from m2lrf.trainers.orpo_trainer import M2LRFORPOTrainer
+from m2lrf.trainers.grpo_trainer import M2LRFGRPOTrainer, GRPOConfig
 
 __all__ = [
     "M2LRFSFTTrainer",
     "M2LRFDPOTrainer",
-    "M2LRFORPOTrainer"
+    "M2LRFORPOTrainer",
+    "M2LRFGRPOTrainer",
+    "GRPOConfig",
 ]
+

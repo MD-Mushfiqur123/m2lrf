@@ -7,6 +7,7 @@ from m2lrf.serving.paged_attention import PagedKVCache, paged_attention_v1, page
 from m2lrf.serving.radix_cache import RadixPrefixCache, RadixTreeNode
 from m2lrf.serving.speculative import SpeculativeEngine
 from m2lrf.serving.engine import LLMEngine, SamplingParams, RequestOutput
+from m2lrf.serving.openai_server import OpenAIServer, OpenAIServingHandler
 
 __all__ = [
     "BlockSpaceManager",
@@ -23,4 +24,7 @@ __all__ = [
     "LLMEngine",
     "SamplingParams",
     "RequestOutput",
+    "OpenAIServer",
+    "OpenAIServingHandler",
 ]
+
