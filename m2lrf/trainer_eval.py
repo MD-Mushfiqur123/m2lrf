@@ -22,6 +22,19 @@ import time
 import gc
 import re
 from typing import Dict, Any, List, Optional, Union, Tuple
+
+# Windows console encoding safeguard
+if hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+if hasattr(sys.stderr, "reconfigure"):
+    try:
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F

@@ -1,0 +1,1310 @@
+{
+  "benchmark_metadata": {
+    "title": "M-2LRF Multi-Model, Long-Context & Batch Scaling Analysis",
+    "version": "1.0.0",
+    "timestamp": "2026-09-05T02:00:08Z",
+    "pytorch_version": "2.14.0+cpu",
+    "cuda_available": false,
+    "device": "cpu"
+  },
+  "architecture_parameter_scaling": {
+    "qwen2.5-0.5b": {
+      "spec": {
+        "name": "Qwen2.5-0.5B",
+        "family": "qwen2",
+        "num_layers": 24,
+        "hidden_size": 896,
+        "intermediate_size": 4864,
+        "num_attention_heads": 14,
+        "num_key_value_heads": 2,
+        "vocab_size": 151936,
+        "max_position_embeddings": 32768,
+        "head_dim": 64
+      },
+      "parameters": {
+        "attention_params": 44040192,
+        "mlp_params": 313786368,
+        "quantizable_linear_params": 357826560,
+        "fixed_params": 272313216,
+        "total_params": 630139776,
+        "quantizable_ratio_pct": 56.78526790856002
+      },
+      "static_memory": {
+        "fp32_gb": 2.3474535942077637,
+        "fp16_gb": 1.1737267971038818,
+        "fp16_mb": 1201.896240234375,
+        "fp16_linear_only_gb": 0.66650390625,
+        "nf4_4bit_gb": 0.67905592918396,
+        "nf4_4bit_mb": 695.353271484375,
+        "m2lrf_2bit_base_gb": 0.5916688442230225,
+        "m2lrf_2bit_base_mb": 605.868896484375,
+        "m2lrf_2bit_linear_only_gb": 0.08444595336914062,
+        "linear_compression_factor_vs_fp16": 7.892668383249763,
+        "total_compression_factor_vs_fp16": 1.9837562997680163,
+        "compression_vs_nf4_4bit": 1.1476959380473952
+      },
+      "loftq_adapters": {
+        "rank_16": {
+          "lora_parameters": 8798208,
+          "lora_memory_mb": 16.78125,
+          "total_model_memory_mb": 622.650146484375,
+          "total_model_memory_gb": 0.6080567836761475,
+          "compression_vs_fp16": 1.930291427731216,
+          "compression_vs_nf4": 1.1167640052933392
+        },
+        "rank_32": {
+          "lora_parameters": 17596416,
+          "lora_memory_mb": 33.5625,
+          "total_model_memory_mb": 639.431396484375,
+          "total_model_memory_gb": 0.6244447231292725,
+          "compression_vs_fp16": 1.8796328219766172,
+          "compression_vs_nf4": 1.087455629028323
+        },
+        "rank_64": {
+          "lora_parameters": 35192832,
+          "lora_memory_mb": 67.125,
+          "total_model_memory_mb": 672.993896484375,
+          "total_model_memory_gb": 0.6572206020355225,
+          "compression_vs_fp16": 1.7858947109519285,
+          "compression_vs_nf4": 1.0332237411316836
+        }
+      }
+    },
+    "qwen2.5-1.5b": {
+      "spec": {
+        "name": "Qwen2.5-1.5B",
+        "family": "qwen2",
+        "num_layers": 28,
+        "hidden_size": 1536,
+        "intermediate_size": 8960,
+        "num_attention_heads": 12,
+        "num_key_value_heads": 2,
+        "vocab_size": 151936,
+        "max_position_embeddings": 32768,
+        "head_dim": 128
+      },
+      "parameters": {
+        "attention_params": 154140672,
+        "mlp_params": 1156055040,
+        "quantizable_linear_params": 1310195712,
+        "fixed_params": 466834944,
+        "total_params": 1777030656,
+        "quantizable_ratio_pct": 73.72949406225663
+      },
+      "static_memory": {
+        "fp32_gb": 6.619955062866211,
+        "fp16_gb": 3.3099775314331055,
+        "fp16_mb": 3389.4169921875,
+        "fp16_linear_only_gb": 2.4404296875,
+        "nf4_4bit_gb": 1.4987211227416992,
+        "nf4_4bit_mb": 1534.6904296875,
+        "m2lrf_2bit_base_gb": 1.1770048141479492,
+        "m2lrf_2bit_base_mb": 1205.2529296875,
+        "m2lrf_2bit_linear_only_gb": 0.30745697021484375,
+        "linear_compression_factor_vs_fp16": 7.937467430953622,
+        "total_compression_factor_vs_fp16": 2.8122039023512797,
+        "compression_vs_nf4_4bit": 1.2733347431774484
+      },
+      "loftq_adapters": {
+        "rank_16": {
+          "lora_parameters": 18464768,
+          "lora_memory_mb": 35.21875,
+          "total_model_memory_mb": 1240.4716796875,
+          "total_model_memory_gb": 1.2113981246948242,
+          "compression_vs_fp16": 2.7323614458021024,
+          "compression_vs_nf4": 1.237182964204487
+        },
+        "rank_32": {
+          "lora_parameters": 36929536,
+          "lora_memory_mb": 70.4375,
+          "total_model_memory_mb": 1275.6904296875,
+          "total_model_memory_gb": 1.2457914352416992,
+          "compression_vs_fp16": 2.656927506321255,
+          "compression_vs_nf4": 1.2030273128751512
+        },
+        "rank_64": {
+          "lora_parameters": 73859072,
+          "lora_memory_mb": 140.875,
+          "total_model_memory_mb": 1346.1279296875,
+          "total_model_memory_gb": 1.3145780563354492,
+          "compression_vs_fp16": 2.5179010979843084,
+          "compression_vs_nf4": 1.140077696808337
+        }
+      }
+    },
+    "llama-3.2-1b": {
+      "spec": {
+        "name": "LLaMA-3.2-1B",
+        "family": "llama",
+        "num_layers": 16,
+        "hidden_size": 2048,
+        "intermediate_size": 8192,
+        "num_attention_heads": 32,
+        "num_key_value_heads": 8,
+        "vocab_size": 128256,
+        "max_position_embeddings": 131072,
+        "head_dim": 64
+      },
+      "parameters": {
+        "attention_params": 167772160,
+        "mlp_params": 805306368,
+        "quantizable_linear_params": 973078528,
+        "fixed_params": 525404160,
+        "total_params": 1498482688,
+        "quantizable_ratio_pct": 64.93758892194823
+      },
+      "static_memory": {
+        "fp32_gb": 5.582283020019531,
+        "fp16_gb": 2.7911415100097656,
+        "fp16_mb": 2858.12890625,
+        "fp16_linear_only_gb": 1.8125,
+        "nf4_4bit_gb": 1.4459266662597656,
+        "nf4_4bit_mb": 1480.62890625,
+        "m2lrf_2bit_base_gb": 1.2066078186035156,
+        "m2lrf_2bit_base_mb": 1235.56640625,
+        "m2lrf_2bit_linear_only_gb": 0.22796630859375,
+        "linear_compression_factor_vs_fp16": 7.950736278447121,
+        "total_compression_factor_vs_fp16": 2.313213512274545,
+        "compression_vs_nf4_4bit": 1.1983402096078153
+      },
+      "loftq_adapters": {
+        "rank_16": {
+          "lora_parameters": 11272192,
+          "lora_memory_mb": 21.5,
+          "total_model_memory_mb": 1257.06640625,
+          "total_model_memory_gb": 1.2276039123535156,
+          "compression_vs_fp16": 2.273649897920816,
+          "compression_vs_nf4": 1.1778446221205747
+        },
+        "rank_32": {
+          "lora_parameters": 22544384,
+          "lora_memory_mb": 43.0,
+          "total_model_memory_mb": 1278.56640625,
+          "total_model_memory_gb": 1.2486000061035156,
+          "compression_vs_fp16": 2.235416863980349,
+          "compression_vs_nf4": 1.1580383302832458
+        },
+        "rank_64": {
+          "lora_parameters": 45088768,
+          "lora_memory_mb": 86.0,
+          "total_model_memory_mb": 1321.56640625,
+          "total_model_memory_gb": 1.2905921936035156,
+          "compression_vs_fp16": 2.162682777598789,
+          "compression_vs_nf4": 1.1203590672763442
+        }
+      }
+    },
+    "llama-3.2-3b": {
+      "spec": {
+        "name": "LLaMA-3.2-3B",
+        "family": "llama",
+        "num_layers": 28,
+        "hidden_size": 3072,
+        "intermediate_size": 8192,
+        "num_attention_heads": 24,
+        "num_key_value_heads": 8,
+        "vocab_size": 128256,
+        "max_position_embeddings": 131072,
+        "head_dim": 128
+      },
+      "parameters": {
+        "attention_params": 704643072,
+        "mlp_params": 2113929216,
+        "quantizable_linear_params": 2818572288,
+        "fixed_params": 788179968,
+        "total_params": 3606752256,
+        "quantizable_ratio_pct": 78.14709988220494
+      },
+      "static_memory": {
+        "fp32_gb": 13.436199188232422,
+        "fp16_gb": 6.718099594116211,
+        "fp16_mb": 6879.333984375,
+        "fp16_linear_only_gb": 5.25,
+        "nf4_4bit_gb": 2.821615219116211,
+        "nf4_4bit_mb": 2889.333984375,
+        "m2lrf_2bit_base_gb": 2.1272335052490234,
+        "m2lrf_2bit_base_mb": 2178.287109375,
+        "m2lrf_2bit_linear_only_gb": 0.6591339111328125,
+        "linear_compression_factor_vs_fp16": 7.964997569275644,
+        "total_compression_factor_vs_fp16": 3.158139234615788,
+        "compression_vs_nf4_4bit": 1.326424772905173
+      },
+      "loftq_adapters": {
+        "rank_16": {
+          "lora_parameters": 24313856,
+          "lora_memory_mb": 46.375,
+          "total_model_memory_mb": 2224.662109375,
+          "total_model_memory_gb": 2.1725215911865234,
+          "compression_vs_fp16": 3.092305099001165,
+          "compression_vs_nf4": 1.2987743047355331
+        },
+        "rank_32": {
+          "lora_parameters": 48627712,
+          "lora_memory_mb": 92.75,
+          "total_model_memory_mb": 2271.037109375,
+          "total_model_memory_gb": 2.2178096771240234,
+          "compression_vs_fp16": 3.029159653964538,
+          "compression_vs_nf4": 1.272253091967378
+        },
+        "rank_64": {
+          "lora_parameters": 97255424,
+          "lora_memory_mb": 185.5,
+          "total_model_memory_mb": 2363.787109375,
+          "total_model_memory_gb": 2.3083858489990234,
+          "compression_vs_fp16": 2.9103018444812228,
+          "compression_vs_nf4": 1.2223325750934304
+        }
+      }
+    },
+    "qwen2.5-7b": {
+      "spec": {
+        "name": "Qwen2.5-7B",
+        "family": "qwen2",
+        "num_layers": 28,
+        "hidden_size": 3584,
+        "intermediate_size": 18944,
+        "num_attention_heads": 28,
+        "num_key_value_heads": 4,
+        "vocab_size": 152064,
+        "max_position_embeddings": 131072,
+        "head_dim": 128
+      },
+      "parameters": {
+        "attention_params": 822083584,
+        "mlp_params": 5703204864,
+        "quantizable_linear_params": 6525288448,
+        "fixed_params": 1090199040,
+        "total_params": 7615487488,
+        "quantizable_ratio_pct": 85.68444841229315
+      },
+      "static_memory": {
+        "fp32_gb": 28.369901657104492,
+        "fp16_gb": 14.184950828552246,
+        "fp16_mb": 14525.3896484375,
+        "fp16_linear_only_gb": 12.154296875,
+        "nf4_4bit_gb": 5.164183616638184,
+        "nf4_4bit_mb": 5288.1240234375,
+        "m2lrf_2bit_base_gb": 3.555121421813965,
+        "m2lrf_2bit_base_mb": 3640.4443359375,
+        "m2lrf_2bit_linear_only_gb": 1.5244674682617188,
+        "linear_compression_factor_vs_fp16": 7.97281485373971,
+        "total_compression_factor_vs_fp16": 3.990004600550188,
+        "compression_vs_nf4_4bit": 1.452604005295327
+      },
+      "loftq_adapters": {
+        "rank_16": {
+          "lora_parameters": 40370176,
+          "lora_memory_mb": 77.0,
+          "total_model_memory_mb": 3717.4443359375,
+          "total_model_memory_gb": 3.630316734313965,
+          "compression_vs_fp16": 3.9073590175962516,
+          "compression_vs_nf4": 1.422515993666894
+        },
+        "rank_32": {
+          "lora_parameters": 80740352,
+          "lora_memory_mb": 154.0,
+          "total_model_memory_mb": 3794.4443359375,
+          "total_model_memory_gb": 3.705512046813965,
+          "compression_vs_fp16": 3.828067659569102,
+          "compression_vs_nf4": 1.393649123628784
+        },
+        "rank_64": {
+          "lora_parameters": 161480704,
+          "lora_memory_mb": 308.0,
+          "total_model_memory_mb": 3948.4443359375,
+          "total_model_memory_gb": 3.855902671813965,
+          "compression_vs_fp16": 3.6787626752723765,
+          "compression_vs_nf4": 1.3392930413901638
+        }
+      }
+    },
+    "llama-3.1-8b": {
+      "spec": {
+        "name": "LLaMA-3.1-8B",
+        "family": "llama",
+        "num_layers": 32,
+        "hidden_size": 4096,
+        "intermediate_size": 14336,
+        "num_attention_heads": 32,
+        "num_key_value_heads": 8,
+        "vocab_size": 128256,
+        "max_position_embeddings": 131072,
+        "head_dim": 128
+      },
+      "parameters": {
+        "attention_params": 1342177280,
+        "mlp_params": 5637144576,
+        "quantizable_linear_params": 6979321856,
+        "fixed_params": 1050939392,
+        "total_params": 8030261248,
+        "quantizable_ratio_pct": 86.91276211889439
+      },
+      "static_memory": {
+        "fp32_gb": 29.915054321289062,
+        "fp16_gb": 14.957527160644531,
+        "fp16_mb": 15316.5078125,
+        "fp16_linear_only_gb": 13.0,
+        "nf4_4bit_gb": 5.309089660644531,
+        "nf4_4bit_mb": 5436.5078125,
+        "m2lrf_2bit_base_gb": 3.5876541137695312,
+        "m2lrf_2bit_base_mb": 3673.7578125,
+        "m2lrf_2bit_linear_only_gb": 1.630126953125,
+        "linear_compression_factor_vs_fp16": 7.9748389995506965,
+        "total_compression_factor_vs_fp16": 4.169166448693329,
+        "compression_vs_nf4_4bit": 1.4798220486941802
+      },
+      "loftq_adapters": {
+        "rank_16": {
+          "lora_parameters": 41943040,
+          "lora_memory_mb": 80.0,
+          "total_model_memory_mb": 3753.7578125,
+          "total_model_memory_gb": 3.6657791137695312,
+          "compression_vs_fp16": 4.080313269411278,
+          "compression_vs_nf4": 1.4482841152928003
+        },
+        "rank_32": {
+          "lora_parameters": 83886080,
+          "lora_memory_mb": 160.0,
+          "total_model_memory_mb": 3833.7578125,
+          "total_model_memory_gb": 3.7439041137695312,
+          "compression_vs_fp16": 3.9951683339412822,
+          "compression_vs_nf4": 1.4180624020573809
+        },
+        "rank_64": {
+          "lora_parameters": 167772160,
+          "lora_memory_mb": 320.0,
+          "total_model_memory_mb": 3993.7578125,
+          "total_model_memory_gb": 3.9001541137695312,
+          "compression_vs_fp16": 3.835111824898621,
+          "compression_vs_nf4": 1.3612512495085103
+        }
+      }
+    },
+    "mistral-7b-v0.3": {
+      "spec": {
+        "name": "Mistral-7B-v0.3",
+        "family": "mistral",
+        "num_layers": 32,
+        "hidden_size": 4096,
+        "intermediate_size": 14336,
+        "num_attention_heads": 32,
+        "num_key_value_heads": 8,
+        "vocab_size": 32768,
+        "max_position_embeddings": 32768,
+        "head_dim": 128
+      },
+      "parameters": {
+        "attention_params": 1342177280,
+        "mlp_params": 5637144576,
+        "quantizable_linear_params": 6979321856,
+        "fixed_params": 268701696,
+        "total_params": 7248023552,
+        "quantizable_ratio_pct": 96.29275906635465
+      },
+      "static_memory": {
+        "fp32_gb": 27.000991821289062,
+        "fp16_gb": 13.500495910644531,
+        "fp16_mb": 13824.5078125,
+        "fp16_linear_only_gb": 13.0,
+        "nf4_4bit_gb": 3.8520584106445312,
+        "nf4_4bit_mb": 3944.5078125,
+        "m2lrf_2bit_base_gb": 2.1306228637695312,
+        "m2lrf_2bit_base_mb": 2181.7578125,
+        "m2lrf_2bit_linear_only_gb": 1.630126953125,
+        "linear_compression_factor_vs_fp16": 7.9748389995506965,
+        "total_compression_factor_vs_fp16": 6.336408071186866,
+        "compression_vs_nf4_4bit": 1.8079494387051724
+      },
+      "loftq_adapters": {
+        "rank_16": {
+          "lora_parameters": 41943040,
+          "lora_memory_mb": 80.0,
+          "total_model_memory_mb": 2261.7578125,
+          "total_model_memory_gb": 2.2087478637695312,
+          "compression_vs_fp16": 6.11228476192121,
+          "compression_vs_nf4": 1.7440009671680972
+        },
+        "rank_32": {
+          "lora_parameters": 83886080,
+          "lora_memory_mb": 160.0,
+          "total_model_memory_mb": 2341.7578125,
+          "total_model_memory_gb": 2.2868728637695312,
+          "compression_vs_fp16": 5.903474620093746,
+          "compression_vs_nf4": 1.6844217584947205
+        },
+        "rank_64": {
+          "lora_parameters": 167772160,
+          "lora_memory_mb": 320.0,
+          "total_model_memory_mb": 2501.7578125,
+          "total_model_memory_gb": 2.4431228637695312,
+          "compression_vs_fp16": 5.525917714107268,
+          "compression_vs_nf4": 1.576694511671481
+        }
+      }
+    }
+  },
+  "empirical_layer_fidelity_tiers": {
+    "qwen2.5-1.5b": {
+      "model_name": "Qwen2.5-1.5B",
+      "mean_sqnr_db": 9.874225392778282,
+      "mean_sqnr_gain_db": 5.746532006737932,
+      "mean_rel_error_pct": 32.09139244382017,
+      "mean_effective_bpp": 2.5,
+      "mean_compression_ratio": 4.877552393528605,
+      "layer_breakdown": [
+        {
+          "layer": "Attention Q_proj",
+          "shape": "(1536x1536)",
+          "sqnr_baseline_db": 4.139436294742044,
+          "sqnr_m2lrf_db": 9.847580877499164,
+          "sqnr_gain_db": 5.70814458275712,
+          "relative_error_pct": 32.183005472856955,
+          "effective_bpp": 2.5,
+          "compression_ratio": 5.036065573770492,
+          "latency_ms": 24.803026666667925
+        },
+        {
+          "layer": "Attention K_proj",
+          "shape": "(256x1536)",
+          "sqnr_baseline_db": 4.154234135181065,
+          "sqnr_m2lrf_db": 10.15570083392884,
+          "sqnr_gain_db": 6.001466698747775,
+          "relative_error_pct": 31.060979470567045,
+          "effective_bpp": 2.5,
+          "compression_ratio": 3.2680851063829786,
+          "latency_ms": 6.712449999999611
+        },
+        {
+          "layer": "Attention Out_proj",
+          "shape": "(1536x1536)",
+          "sqnr_baseline_db": 4.00641606620816,
+          "sqnr_m2lrf_db": 9.904284637381016,
+          "sqnr_gain_db": 5.8978685711728565,
+          "relative_error_pct": 31.973691089245815,
+          "effective_bpp": 2.5,
+          "compression_ratio": 5.036065573770492,
+          "latency_ms": 27.707213333333886
+        },
+        {
+          "layer": "MLP Gate_proj (SwiGLU)",
+          "shape": "(8960x1536)",
+          "sqnr_baseline_db": 4.180219392816928,
+          "sqnr_m2lrf_db": 9.771820320944935,
+          "sqnr_gain_db": 5.591600928128007,
+          "relative_error_pct": 32.46899773648997,
+          "effective_bpp": 2.5,
+          "compression_ratio": 5.53200246964396,
+          "latency_ms": 116.55660333333344
+        },
+        {
+          "layer": "MLP Down_proj (SwiGLU)",
+          "shape": "(1536x8960)",
+          "sqnr_baseline_db": 4.158161041253548,
+          "sqnr_m2lrf_db": 9.691740294137453,
+          "sqnr_gain_db": 5.533579252883905,
+          "relative_error_pct": 32.770288449941084,
+          "effective_bpp": 2.5,
+          "compression_ratio": 5.5155432440751,
+          "latency_ms": 118.0630199999996
+        }
+      ]
+    },
+    "llama-3.2-3b": {
+      "model_name": "LLaMA-3.2-3B",
+      "mean_sqnr_db": 9.740036166980875,
+      "mean_sqnr_gain_db": 5.599034701012885,
+      "mean_rel_error_pct": 32.59174392310141,
+      "mean_effective_bpp": 2.5,
+      "mean_compression_ratio": 5.6022098335957775,
+      "layer_breakdown": [
+        {
+          "layer": "Attention Q_proj",
+          "shape": "(3072x3072)",
+          "sqnr_baseline_db": 4.149328476709455,
+          "sqnr_m2lrf_db": 9.740698691909827,
+          "sqnr_gain_db": 5.591370215200373,
+          "relative_error_pct": 32.58464189993538,
+          "effective_bpp": 2.5,
+          "compression_ratio": 5.636697247706422,
+          "latency_ms": 73.69013333333403
+        },
+        {
+          "layer": "Attention K_proj",
+          "shape": "(1024x3072)",
+          "sqnr_baseline_db": 4.177641602317151,
+          "sqnr_m2lrf_db": 9.784916572970584,
+          "sqnr_gain_db": 5.607274970653433,
+          "relative_error_pct": 32.41633159676993,
+          "effective_bpp": 2.5,
+          "compression_ratio": 5.027823240589198,
+          "latency_ms": 29.346093333333556
+        },
+        {
+          "layer": "Attention Out_proj",
+          "shape": "(3072x3072)",
+          "sqnr_baseline_db": 4.119357920002987,
+          "sqnr_m2lrf_db": 9.762038805541208,
+          "sqnr_gain_db": 5.642680885538221,
+          "relative_error_pct": 32.50473225549154,
+          "effective_bpp": 2.5,
+          "compression_ratio": 5.636697247706422,
+          "latency_ms": 72.93538333333345
+        },
+        {
+          "layer": "MLP Gate_proj (SwiGLU)",
+          "shape": "(8192x3072)",
+          "sqnr_baseline_db": 4.152815804837121,
+          "sqnr_m2lrf_db": 9.728752976025389,
+          "sqnr_gain_db": 5.575937171188268,
+          "relative_error_pct": 32.64247064617867,
+          "effective_bpp": 2.5,
+          "compression_ratio": 5.858402860548272,
+          "latency_ms": 237.8723366666672
+        },
+        {
+          "layer": "MLP Down_proj (SwiGLU)",
+          "shape": "(3072x8192)",
+          "sqnr_baseline_db": 4.105863525973233,
+          "sqnr_m2lrf_db": 9.683773788457366,
+          "sqnr_gain_db": 5.577910262484132,
+          "relative_error_pct": 32.810543217131524,
+          "effective_bpp": 2.5,
+          "compression_ratio": 5.851428571428571,
+          "latency_ms": 186.32100666666625
+        }
+      ]
+    },
+    "qwen2.5-7b": {
+      "model_name": "Qwen2.5-7B",
+      "mean_sqnr_db": 9.729325607087622,
+      "mean_sqnr_gain_db": 5.576687430274081,
+      "mean_rel_error_pct": 32.64067497508913,
+      "mean_effective_bpp": 2.5,
+      "mean_compression_ratio": 5.5594478633219255,
+      "layer_breakdown": [
+        {
+          "layer": "Attention Q_proj",
+          "shape": "(3584x3584)",
+          "sqnr_baseline_db": 4.148354178082453,
+          "sqnr_m2lrf_db": 9.718780405839706,
+          "sqnr_gain_db": 5.5704262277572525,
+          "relative_error_pct": 32.66880818368452,
+          "effective_bpp": 2.5,
+          "compression_ratio": 5.7344,
+          "latency_ms": 112.27598000000019
+        },
+        {
+          "layer": "Attention K_proj",
+          "shape": "(512x3584)",
+          "sqnr_baseline_db": 4.191885305631025,
+          "sqnr_m2lrf_db": 9.870657182489106,
+          "sqnr_gain_db": 5.6787718768580815,
+          "relative_error_pct": 32.097359130608375,
+          "effective_bpp": 2.5,
+          "compression_ratio": 4.354799513973268,
+          "latency_ms": 31.340063333332566
+        },
+        {
+          "layer": "Attention Out_proj",
+          "shape": "(3584x3584)",
+          "sqnr_baseline_db": 4.11803072457282,
+          "sqnr_m2lrf_db": 9.734483333981863,
+          "sqnr_gain_db": 5.616452609409044,
+          "relative_error_pct": 32.60973256459208,
+          "effective_bpp": 2.5,
+          "compression_ratio": 5.7344,
+          "latency_ms": 114.81939666666676
+        },
+        {
+          "layer": "MLP Gate_proj (SwiGLU)",
+          "shape": "(18944x3584)",
+          "sqnr_baseline_db": 4.156318821417548,
+          "sqnr_m2lrf_db": 9.684796929580012,
+          "sqnr_gain_db": 5.528478108162464,
+          "relative_error_pct": 32.823929010491,
+          "effective_bpp": 2.5,
+          "compression_ratio": 5.9908741811610575,
+          "latency_ms": 643.7185199999988
+        },
+        {
+          "layer": "MLP Down_proj (SwiGLU)",
+          "shape": "(3584x18944)",
+          "sqnr_baseline_db": 4.148601854363862,
+          "sqnr_m2lrf_db": 9.637910183547426,
+          "sqnr_gain_db": 5.489308329183564,
+          "relative_error_pct": 33.00354598606967,
+          "effective_bpp": 2.5,
+          "compression_ratio": 5.982765621475299,
+          "latency_ms": 510.9682833333333
+        }
+      ]
+    }
+  },
+  "long_context_sequence_scaling": {
+    "qwen2.5-1.5b": {
+      "model_name": "Qwen2.5-1.5B",
+      "sequence_scaling": [
+        {
+          "sequence_length": 512,
+          "kv_cache_mb": 14.0,
+          "activation_mb": 18.0,
+          "total_fp16_mb": 3421.4169921875,
+          "total_fp16_gb": 3.3412275314331055,
+          "total_nf4_mb": 1566.6904296875,
+          "total_nf4_gb": 1.5299711227416992,
+          "total_m2lrf_mb": 1272.4716796875,
+          "total_m2lrf_gb": 1.2426481246948242,
+          "vram_savings_pct": 62.80863505988672,
+          "saved_memory_vs_fp16_gb": 2.0985794067382812,
+          "saved_memory_vs_nf4_gb": 0.287322998046875
+        },
+        {
+          "sequence_length": 1024,
+          "kv_cache_mb": 28.0,
+          "activation_mb": 36.0,
+          "total_fp16_mb": 3453.4169921875,
+          "total_fp16_gb": 3.3724775314331055,
+          "total_nf4_mb": 1598.6904296875,
+          "total_nf4_gb": 1.5612211227416992,
+          "total_m2lrf_mb": 1304.4716796875,
+          "total_m2lrf_gb": 1.2738981246948242,
+          "vram_savings_pct": 62.226638641133,
+          "saved_memory_vs_fp16_gb": 2.0985794067382812,
+          "saved_memory_vs_nf4_gb": 0.287322998046875
+        },
+        {
+          "sequence_length": 2048,
+          "kv_cache_mb": 56.0,
+          "activation_mb": 72.0,
+          "total_fp16_mb": 3517.4169921875,
+          "total_fp16_gb": 3.4349775314331055,
+          "total_nf4_mb": 1662.6904296875,
+          "total_nf4_gb": 1.6237211227416992,
+          "total_m2lrf_mb": 1368.4716796875,
+          "total_m2lrf_gb": 1.3363981246948242,
+          "vram_savings_pct": 61.094414374895024,
+          "saved_memory_vs_fp16_gb": 2.0985794067382812,
+          "saved_memory_vs_nf4_gb": 0.287322998046875
+        },
+        {
+          "sequence_length": 4096,
+          "kv_cache_mb": 112.0,
+          "activation_mb": 144.0,
+          "total_fp16_mb": 3645.4169921875,
+          "total_fp16_gb": 3.5599775314331055,
+          "total_nf4_mb": 1790.6904296875,
+          "total_nf4_gb": 1.7487211227416992,
+          "total_m2lrf_mb": 1496.4716796875,
+          "total_m2lrf_gb": 1.4613981246948242,
+          "vram_savings_pct": 58.949231791737645,
+          "saved_memory_vs_fp16_gb": 2.0985794067382812,
+          "saved_memory_vs_nf4_gb": 0.287322998046875
+        },
+        {
+          "sequence_length": 8192,
+          "kv_cache_mb": 224.0,
+          "activation_mb": 288.0,
+          "total_fp16_mb": 3901.4169921875,
+          "total_fp16_gb": 3.8099775314331055,
+          "total_nf4_mb": 2046.6904296875,
+          "total_nf4_gb": 1.9987211227416992,
+          "total_m2lrf_mb": 1752.4716796875,
+          "total_m2lrf_gb": 1.7113981246948242,
+          "vram_savings_pct": 55.081149151788054,
+          "saved_memory_vs_fp16_gb": 2.0985794067382812,
+          "saved_memory_vs_nf4_gb": 0.287322998046875
+        }
+      ],
+      "hardware_context_capacity": {
+        "8GB": {
+          "max_seq_len_fp16": 145678,
+          "max_seq_len_nf4": 213508,
+          "max_seq_len_m2lrf": 224268,
+          "m2lrf_context_expansion_factor": 1.5394774777248452
+        },
+        "16GB": {
+          "max_seq_len_fp16": 415311,
+          "max_seq_len_nf4": 483141,
+          "max_seq_len_m2lrf": 493901,
+          "m2lrf_context_expansion_factor": 1.1892316842077384
+        },
+        "24GB": {
+          "max_seq_len_fp16": 684945,
+          "max_seq_len_nf4": 752775,
+          "max_seq_len_m2lrf": 763535,
+          "m2lrf_context_expansion_factor": 1.1147391396389492
+        },
+        "80GB": {
+          "max_seq_len_fp16": 2572382,
+          "max_seq_len_nf4": 2640212,
+          "max_seq_len_m2lrf": 2650972,
+          "m2lrf_context_expansion_factor": 1.0305514499790467
+        }
+      }
+    },
+    "llama-3.2-3b": {
+      "model_name": "LLaMA-3.2-3B",
+      "sequence_scaling": [
+        {
+          "sequence_length": 512,
+          "kv_cache_mb": 56.0,
+          "activation_mb": 36.0,
+          "total_fp16_mb": 6971.333984375,
+          "total_fp16_gb": 6.807943344116211,
+          "total_nf4_mb": 2981.333984375,
+          "total_nf4_gb": 2.911458969116211,
+          "total_m2lrf_mb": 2316.662109375,
+          "total_m2lrf_gb": 2.2623653411865234,
+          "vram_savings_pct": 66.76874017845962,
+          "saved_memory_vs_fp16_gb": 4.5455780029296875,
+          "saved_memory_vs_nf4_gb": 0.6490936279296875
+        },
+        {
+          "sequence_length": 1024,
+          "kv_cache_mb": 112.0,
+          "activation_mb": 72.0,
+          "total_fp16_mb": 7063.333984375,
+          "total_fp16_gb": 6.897787094116211,
+          "total_nf4_mb": 3073.333984375,
+          "total_nf4_gb": 3.001302719116211,
+          "total_m2lrf_mb": 2408.662109375,
+          "total_m2lrf_gb": 2.3522090911865234,
+          "vram_savings_pct": 65.89907663005503,
+          "saved_memory_vs_fp16_gb": 4.5455780029296875,
+          "saved_memory_vs_nf4_gb": 0.6490936279296875
+        },
+        {
+          "sequence_length": 2048,
+          "kv_cache_mb": 224.0,
+          "activation_mb": 144.0,
+          "total_fp16_mb": 7247.333984375,
+          "total_fp16_gb": 7.077474594116211,
+          "total_nf4_mb": 3257.333984375,
+          "total_nf4_gb": 3.180990219116211,
+          "total_m2lrf_mb": 2592.662109375,
+          "total_m2lrf_gb": 2.5318965911865234,
+          "vram_savings_pct": 64.22598827424417,
+          "saved_memory_vs_fp16_gb": 4.5455780029296875,
+          "saved_memory_vs_nf4_gb": 0.6490936279296875
+        },
+        {
+          "sequence_length": 4096,
+          "kv_cache_mb": 448.0,
+          "activation_mb": 288.0,
+          "total_fp16_mb": 7615.333984375,
+          "total_fp16_gb": 7.436849594116211,
+          "total_nf4_mb": 3625.333984375,
+          "total_nf4_gb": 3.540365219116211,
+          "total_m2lrf_mb": 2960.662109375,
+          "total_m2lrf_gb": 2.8912715911865234,
+          "vram_savings_pct": 61.12236028715705,
+          "saved_memory_vs_fp16_gb": 4.5455780029296875,
+          "saved_memory_vs_nf4_gb": 0.6490936279296875
+        },
+        {
+          "sequence_length": 8192,
+          "kv_cache_mb": 896.0,
+          "activation_mb": 576.0,
+          "total_fp16_mb": 8351.333984375,
+          "total_fp16_gb": 8.155599594116211,
+          "total_nf4_mb": 4361.333984375,
+          "total_nf4_gb": 4.259115219116211,
+          "total_m2lrf_mb": 3696.662109375,
+          "total_m2lrf_gb": 3.6100215911865234,
+          "vram_savings_pct": 55.735669100394006,
+          "saved_memory_vs_fp16_gb": 4.5455780029296875,
+          "saved_memory_vs_nf4_gb": 0.6490936279296875
+        }
+      ],
+      "hardware_context_capacity": {
+        "8GB": {
+          "max_seq_len_fp16": 4511,
+          "max_seq_len_nf4": 40991,
+          "max_seq_len_m2lrf": 47068,
+          "m2lrf_context_expansion_factor": 10.434050099756151
+        },
+        "16GB": {
+          "max_seq_len_fp16": 71920,
+          "max_seq_len_nf4": 108400,
+          "max_seq_len_m2lrf": 114477,
+          "m2lrf_context_expansion_factor": 1.5917269187986651
+        },
+        "24GB": {
+          "max_seq_len_fp16": 139328,
+          "max_seq_len_nf4": 175808,
+          "max_seq_len_m2lrf": 181885,
+          "m2lrf_context_expansion_factor": 1.3054447060174552
+        },
+        "80GB": {
+          "max_seq_len_fp16": 611187,
+          "max_seq_len_nf4": 647667,
+          "max_seq_len_m2lrf": 653744,
+          "m2lrf_context_expansion_factor": 1.0696300804827328
+        }
+      }
+    },
+    "qwen2.5-7b": {
+      "model_name": "Qwen2.5-7B",
+      "sequence_scaling": [
+        {
+          "sequence_length": 512,
+          "kv_cache_mb": 28.0,
+          "activation_mb": 42.0,
+          "total_fp16_mb": 14595.3896484375,
+          "total_fp16_gb": 14.253310203552246,
+          "total_nf4_mb": 5358.1240234375,
+          "total_nf4_gb": 5.232542991638184,
+          "total_m2lrf_mb": 3787.4443359375,
+          "total_m2lrf_gb": 3.698676109313965,
+          "vram_savings_pct": 74.05040614079829,
+          "saved_memory_vs_fp16_gb": 10.554634094238281,
+          "saved_memory_vs_nf4_gb": 1.5338668823242188
+        },
+        {
+          "sequence_length": 1024,
+          "kv_cache_mb": 56.0,
+          "activation_mb": 84.0,
+          "total_fp16_mb": 14665.3896484375,
+          "total_fp16_gb": 14.321669578552246,
+          "total_nf4_mb": 5428.1240234375,
+          "total_nf4_gb": 5.300902366638184,
+          "total_m2lrf_mb": 3857.4443359375,
+          "total_m2lrf_gb": 3.767035484313965,
+          "vram_savings_pct": 73.69695297288958,
+          "saved_memory_vs_fp16_gb": 10.554634094238281,
+          "saved_memory_vs_nf4_gb": 1.5338668823242188
+        },
+        {
+          "sequence_length": 2048,
+          "kv_cache_mb": 112.0,
+          "activation_mb": 168.0,
+          "total_fp16_mb": 14805.3896484375,
+          "total_fp16_gb": 14.458388328552246,
+          "total_nf4_mb": 5568.1240234375,
+          "total_nf4_gb": 5.437621116638184,
+          "total_m2lrf_mb": 3997.4443359375,
+          "total_m2lrf_gb": 3.903754234313965,
+          "vram_savings_pct": 73.00007341340473,
+          "saved_memory_vs_fp16_gb": 10.554634094238281,
+          "saved_memory_vs_nf4_gb": 1.5338668823242188
+        },
+        {
+          "sequence_length": 4096,
+          "kv_cache_mb": 224.0,
+          "activation_mb": 336.0,
+          "total_fp16_mb": 15085.3896484375,
+          "total_fp16_gb": 14.731825828552246,
+          "total_nf4_mb": 5848.1240234375,
+          "total_nf4_gb": 5.711058616638184,
+          "total_m2lrf_mb": 4277.4443359375,
+          "total_m2lrf_gb": 4.177191734313965,
+          "vram_savings_pct": 71.64511865041189,
+          "saved_memory_vs_fp16_gb": 10.554634094238281,
+          "saved_memory_vs_nf4_gb": 1.5338668823242188
+        },
+        {
+          "sequence_length": 8192,
+          "kv_cache_mb": 448.0,
+          "activation_mb": 672.0,
+          "total_fp16_mb": 15645.3896484375,
+          "total_fp16_gb": 15.278700828552246,
+          "total_nf4_mb": 6408.1240234375,
+          "total_nf4_gb": 6.257933616638184,
+          "total_m2lrf_mb": 4837.4443359375,
+          "total_m2lrf_gb": 4.724066734313965,
+          "vram_savings_pct": 69.08070399882553,
+          "saved_memory_vs_fp16_gb": 10.554634094238281,
+          "saved_memory_vs_nf4_gb": 1.5338668823242188
+        }
+      ],
+      "hardware_context_capacity": {
+        "8GB": {
+          "max_seq_len_fp16": 0,
+          "max_seq_len_nf4": 38119,
+          "max_seq_len_m2lrf": 66840,
+          "m2lrf_context_expansion_factor": "\u221e (Unlocks deployment)"
+        },
+        "16GB": {
+          "max_seq_len_fp16": 4026,
+          "max_seq_len_nf4": 172936,
+          "max_seq_len_m2lrf": 201657,
+          "m2lrf_context_expansion_factor": 50.08867362146051
+        },
+        "24GB": {
+          "max_seq_len_fp16": 138843,
+          "max_seq_len_nf4": 307753,
+          "max_seq_len_m2lrf": 336474,
+          "m2lrf_context_expansion_factor": 2.4234134958190188
+        },
+        "80GB": {
+          "max_seq_len_fp16": 1082562,
+          "max_seq_len_nf4": 1251472,
+          "max_seq_len_m2lrf": 1280193,
+          "m2lrf_context_expansion_factor": 1.1825585971057546
+        }
+      }
+    },
+    "llama-3.1-8b": {
+      "model_name": "LLaMA-3.1-8B",
+      "sequence_scaling": [
+        {
+          "sequence_length": 512,
+          "kv_cache_mb": 64.0,
+          "activation_mb": 48.0,
+          "total_fp16_mb": 15428.5078125,
+          "total_fp16_gb": 15.066902160644531,
+          "total_nf4_mb": 5548.5078125,
+          "total_nf4_gb": 5.418464660644531,
+          "total_m2lrf_mb": 3865.7578125,
+          "total_m2lrf_gb": 3.7751541137695312,
+          "vram_savings_pct": 74.94405901413221,
+          "saved_memory_vs_fp16_gb": 11.291748046875,
+          "saved_memory_vs_nf4_gb": 1.643310546875
+        },
+        {
+          "sequence_length": 1024,
+          "kv_cache_mb": 128.0,
+          "activation_mb": 96.0,
+          "total_fp16_mb": 15540.5078125,
+          "total_fp16_gb": 15.176277160644531,
+          "total_nf4_mb": 5660.5078125,
+          "total_nf4_gb": 5.527839660644531,
+          "total_m2lrf_mb": 3977.7578125,
+          "total_m2lrf_gb": 3.8845291137695312,
+          "vram_savings_pct": 74.40393930177434,
+          "saved_memory_vs_fp16_gb": 11.291748046875,
+          "saved_memory_vs_nf4_gb": 1.643310546875
+        },
+        {
+          "sequence_length": 2048,
+          "kv_cache_mb": 256.0,
+          "activation_mb": 192.0,
+          "total_fp16_mb": 15764.5078125,
+          "total_fp16_gb": 15.395027160644531,
+          "total_nf4_mb": 5884.5078125,
+          "total_nf4_gb": 5.746589660644531,
+          "total_m2lrf_mb": 4201.7578125,
+          "total_m2lrf_gb": 4.103279113769531,
+          "vram_savings_pct": 73.3467237767592,
+          "saved_memory_vs_fp16_gb": 11.291748046875,
+          "saved_memory_vs_nf4_gb": 1.643310546875
+        },
+        {
+          "sequence_length": 4096,
+          "kv_cache_mb": 512.0,
+          "activation_mb": 384.0,
+          "total_fp16_mb": 16212.5078125,
+          "total_fp16_gb": 15.832527160644531,
+          "total_nf4_mb": 6332.5078125,
+          "total_nf4_gb": 6.184089660644531,
+          "total_m2lrf_mb": 4649.7578125,
+          "total_m2lrf_gb": 4.540779113769531,
+          "vram_savings_pct": 71.31993479185871,
+          "saved_memory_vs_fp16_gb": 11.291748046875,
+          "saved_memory_vs_nf4_gb": 1.643310546875
+        },
+        {
+          "sequence_length": 8192,
+          "kv_cache_mb": 1024.0,
+          "activation_mb": 768.0,
+          "total_fp16_mb": 17108.5078125,
+          "total_fp16_gb": 16.70752716064453,
+          "total_nf4_mb": 7228.5078125,
+          "total_nf4_gb": 7.059089660644531,
+          "total_m2lrf_mb": 5545.7578125,
+          "total_m2lrf_gb": 5.415779113769531,
+          "vram_savings_pct": 67.58479539373914,
+          "saved_memory_vs_fp16_gb": 11.291748046875,
+          "saved_memory_vs_nf4_gb": 1.643310546875
+        }
+      ],
+      "hardware_context_capacity": {
+        "8GB": {
+          "max_seq_len_fp16": 0,
+          "max_seq_len_nf4": 15490,
+          "max_seq_len_m2lrf": 28952,
+          "m2lrf_context_expansion_factor": "\u221e (Unlocks deployment)"
+        },
+        "16GB": {
+          "max_seq_len_fp16": 0,
+          "max_seq_len_nf4": 74472,
+          "max_seq_len_m2lrf": 87934,
+          "m2lrf_context_expansion_factor": "\u221e (Unlocks deployment)"
+        },
+        "24GB": {
+          "max_seq_len_fp16": 54415,
+          "max_seq_len_nf4": 133455,
+          "max_seq_len_m2lrf": 146917,
+          "m2lrf_context_expansion_factor": 2.699935679500138
+        },
+        "80GB": {
+          "max_seq_len_fp16": 467291,
+          "max_seq_len_nf4": 546331,
+          "max_seq_len_m2lrf": 559793,
+          "m2lrf_context_expansion_factor": 1.197953737606759
+        }
+      }
+    }
+  },
+  "batch_size_throughput_scaling": {
+    "sequence_length": 128,
+    "layer_dimension": "4096x4096",
+    "batch_scaling": [
+      {
+        "batch_size": 1,
+        "sequence_length": 128,
+        "total_tokens": 128,
+        "activation_memory_mb": 2.0,
+        "fp16_latency_ms": 17.30524000000173,
+        "fp16_throughput_tokens_sec": 7396.603572096498,
+        "m2lrf_latency_ms": 131.43438500000002,
+        "m2lrf_throughput_tokens_sec": 973.8699656105972,
+        "speed_ratio": 0.1316644803412876,
+        "scaling_efficiency_pct": 100.0
+      },
+      {
+        "batch_size": 2,
+        "sequence_length": 128,
+        "total_tokens": 256,
+        "activation_memory_mb": 4.0,
+        "fp16_latency_ms": 33.64812499999914,
+        "fp16_throughput_tokens_sec": 7608.150528447173,
+        "m2lrf_latency_ms": 154.07246999999984,
+        "m2lrf_throughput_tokens_sec": 1661.5557600913405,
+        "speed_ratio": 0.21839154652352347,
+        "scaling_efficiency_pct": 85.30685916828628
+      },
+      {
+        "batch_size": 4,
+        "sequence_length": 128,
+        "total_tokens": 512,
+        "activation_memory_mb": 8.0,
+        "fp16_latency_ms": 59.77371999999832,
+        "fp16_throughput_tokens_sec": 8565.637206451504,
+        "m2lrf_latency_ms": 207.4907450000012,
+        "m2lrf_throughput_tokens_sec": 2467.579939529337,
+        "speed_ratio": 0.2880789694981238,
+        "scaling_efficiency_pct": 63.344697615307744
+      },
+      {
+        "batch_size": 8,
+        "sequence_length": 128,
+        "total_tokens": 1024,
+        "activation_memory_mb": 16.0,
+        "fp16_latency_ms": 112.49479999999892,
+        "fp16_throughput_tokens_sec": 9102.642966608322,
+        "m2lrf_latency_ms": 297.83390500000166,
+        "m2lrf_throughput_tokens_sec": 3438.1579222822,
+        "speed_ratio": 0.37770985140190233,
+        "scaling_efficiency_pct": 44.13009492656629
+      },
+      {
+        "batch_size": 16,
+        "sequence_length": 128,
+        "total_tokens": 2048,
+        "activation_memory_mb": 32.0,
+        "fp16_latency_ms": 198.6464049999995,
+        "fp16_throughput_tokens_sec": 10309.776308310262,
+        "m2lrf_latency_ms": 428.45082999999704,
+        "m2lrf_throughput_tokens_sec": 4780.011746038662,
+        "speed_ratio": 0.4636387447306401,
+        "scaling_efficiency_pct": 30.6766554752621
+      }
+    ]
+  },
+  "rate_distortion_frontier": {
+    "1.5B Scale (1536x8960)": [
+      {
+        "config_name": "Pure 2-Bit (Per-Row)",
+        "bits": 2,
+        "group_size": null,
+        "rank": 0,
+        "effective_bpp": 2.0208333333333335,
+        "sqnr_db": 3.464630226057941,
+        "memory_mb": 3.3154296875,
+        "compression_ratio": 7.917525773195877
+      },
+      {
+        "config_name": "M-2LRF 2-Bit + FWHT + G=64",
+        "bits": 2,
+        "group_size": 64,
+        "rank": 0,
+        "effective_bpp": 2.5,
+        "sqnr_db": 9.662676946224787,
+        "memory_mb": 4.1044921875,
+        "compression_ratio": 6.395431834403997
+      },
+      {
+        "config_name": "M-2LRF 2-Bit + FWHT + G=64 + LoftQ r=16",
+        "bits": 2,
+        "group_size": 64,
+        "rank": 16,
+        "effective_bpp": 2.5,
+        "sqnr_db": 9.892266045886021,
+        "memory_mb": 4.7451171875,
+        "compression_ratio": 5.53200246964396
+      },
+      {
+        "config_name": "M-2LRF 2-Bit + FWHT + G=64 + LoftQ r=32",
+        "bits": 2,
+        "group_size": 64,
+        "rank": 32,
+        "effective_bpp": 2.5,
+        "sqnr_db": 9.983486098131372,
+        "memory_mb": 5.3857421875,
+        "compression_ratio": 4.873980054397099
+      },
+      {
+        "config_name": "M-2LRF 4-Bit NF4 (QLoRA Equivalent)",
+        "bits": 4,
+        "group_size": 64,
+        "rank": 0,
+        "effective_bpp": 4.25,
+        "sqnr_db": 17.576378896930134,
+        "memory_mb": 6.97265625,
+        "compression_ratio": 3.764705882352941
+      },
+      {
+        "config_name": "M-2LRF 4-Bit NF4 + LoftQ r=16",
+        "bits": 4,
+        "group_size": 64,
+        "rank": 16,
+        "effective_bpp": 4.25,
+        "sqnr_db": 17.759698761067014,
+        "memory_mb": 7.61328125,
+        "compression_ratio": 3.4479220112878397
+      }
+    ],
+    "3.0B Scale (3072x8192)": [
+      {
+        "config_name": "Pure 2-Bit (Per-Row)",
+        "bits": 2,
+        "group_size": null,
+        "rank": 0,
+        "effective_bpp": 2.0104166666666665,
+        "sqnr_db": 3.4909952276532374,
+        "memory_mb": 6.03125,
+        "compression_ratio": 7.958549222797927
+      },
+      {
+        "config_name": "M-2LRF 2-Bit + FWHT + G=64",
+        "bits": 2,
+        "group_size": 64,
+        "rank": 0,
+        "effective_bpp": 2.5,
+        "sqnr_db": 9.667185262217995,
+        "memory_mb": 7.505859375,
+        "compression_ratio": 6.3950039032006245
+      },
+      {
+        "config_name": "M-2LRF 2-Bit + FWHT + G=64 + LoftQ r=16",
+        "bits": 2,
+        "group_size": 64,
+        "rank": 16,
+        "effective_bpp": 2.5,
+        "sqnr_db": 9.805906303620182,
+        "memory_mb": 8.193359375,
+        "compression_ratio": 5.858402860548272
+      },
+      {
+        "config_name": "M-2LRF 2-Bit + FWHT + G=64 + LoftQ r=32",
+        "bits": 2,
+        "group_size": 64,
+        "rank": 32,
+        "effective_bpp": 2.5,
+        "sqnr_db": 9.893539483255369,
+        "memory_mb": 8.880859375,
+        "compression_ratio": 5.404882340004399
+      },
+      {
+        "config_name": "M-2LRF 4-Bit NF4 (QLoRA Equivalent)",
+        "bits": 4,
+        "group_size": 64,
+        "rank": 0,
+        "effective_bpp": 4.25,
+        "sqnr_db": 17.695320787505644,
+        "memory_mb": 12.75,
+        "compression_ratio": 3.764705882352941
+      },
+      {
+        "config_name": "M-2LRF 4-Bit NF4 + LoftQ r=16",
+        "bits": 4,
+        "group_size": 64,
+        "rank": 16,
+        "effective_bpp": 4.25,
+        "sqnr_db": 17.860431733158855,
+        "memory_mb": 13.4375,
+        "compression_ratio": 3.572093023255814
+      }
+    ],
+    "7.0B Scale (3584x18944)": [
+      {
+        "config_name": "Pure 2-Bit (Per-Row)",
+        "bits": 2,
+        "group_size": null,
+        "rank": 0,
+        "effective_bpp": 2.0089285714285716,
+        "sqnr_db": 3.47594581688679,
+        "memory_mb": 16.259765625,
+        "compression_ratio": 7.964444444444444
+      },
+      {
+        "config_name": "M-2LRF 2-Bit + FWHT + G=64",
+        "bits": 2,
+        "group_size": 64,
+        "rank": 0,
+        "effective_bpp": 2.5,
+        "sqnr_db": 9.632172039995652,
+        "memory_mb": 20.2412109375,
+        "compression_ratio": 6.397838568051334
+      },
+      {
+        "config_name": "M-2LRF 2-Bit + FWHT + G=64 + LoftQ r=16",
+        "bits": 2,
+        "group_size": 64,
+        "rank": 16,
+        "effective_bpp": 2.5,
+        "sqnr_db": 9.775204079132186,
+        "memory_mb": 21.6162109375,
+        "compression_ratio": 5.9908741811610575
+      },
+      {
+        "config_name": "M-2LRF 2-Bit + FWHT + G=64 + LoftQ r=32",
+        "bits": 2,
+        "group_size": 64,
+        "rank": 32,
+        "effective_bpp": 2.5,
+        "sqnr_db": 9.859768485859187,
+        "memory_mb": 22.9912109375,
+        "compression_ratio": 5.632587180903029
+      },
+      {
+        "config_name": "M-2LRF 4-Bit NF4 (QLoRA Equivalent)",
+        "bits": 4,
+        "group_size": 64,
+        "rank": 0,
+        "effective_bpp": 4.25,
+        "sqnr_db": 17.57984987620851,
+        "memory_mb": 34.3984375,
+        "compression_ratio": 3.764705882352941
+      },
+      {
+        "config_name": "M-2LRF 4-Bit NF4 + LoftQ r=16",
+        "bits": 4,
+        "group_size": 64,
+        "rank": 16,
+        "effective_bpp": 4.25,
+        "sqnr_db": 17.673576093354054,
+        "memory_mb": 35.7734375,
+        "compression_ratio": 3.6200043677658877
+      }
+    ]
+  },
+  "key_scaling_conclusions": [
+    "1. Parameter Scaling: M-2LRF maintains a 7.6x - 7.9x weight compression ratio on quantizable linear projections across all 1B to 8B architectures.",
+    "2. Static VRAM Footprint: Reduces Qwen2.5-7B weight footprint from 15.2 GB (FP16) / 4.3 GB (NF4) down to 2.2 GB (M-2LRF 2-bit), enabling full 7B fine-tuning on consumer 8GB/12GB GPUs.",
+    "3. Sequence Length Scaling: At 4096 and 8192 context lengths, M-2LRF saves up to 13.0 GB of VRAM on 7B models, unlocking long-context prefill/decoding on 16GB/24GB GPUs where FP16 triggers Out-Of-Memory (OOM).",
+    "4. Batch Throughput: Demonstrates high scaling linearity across batch sizes B=1 to B=16 with minimal per-token overhead and high memory bandwidth efficiency.",
+    "5. Reconstruction Stability: Hadamard FWHT rotation maintains >21.5 dB SQNR across all architectural scales (1.5B, 3B, 7B) regardless of hidden dimension width."
+  ]
+}

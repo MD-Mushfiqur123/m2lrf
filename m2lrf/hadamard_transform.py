@@ -682,7 +682,7 @@ class HadamardDualBasisLinear(nn.Module):
             
         # 6. Bias
         if bias:
-            self.bias = nn.Parameter(torch.zeros(out_features, dtype=torch.float16))
+            self.bias = nn.Parameter(torch.zeros(out_features, dtype=torch.float32))
         else:
             self.register_parameter("bias", None)
             
@@ -883,7 +883,8 @@ class HadamardDualBasisLinear(nn.Module):
         w_dequant_rot = self._dequantize_rotated(dtype=x.dtype)
         
         # 3. Base GEMM in rotated domain: X_tilde @ W_tilde^T = X @ W^T
-        out = F.linear(x_rot, w_dequant_rot, self.bias)
+        bias_val = self.bias.to(dtype=x.dtype) if self.bias is not None else None
+        out = F.linear(x_rot, w_dequant_rot, bias_val)
         
         # 4. LoRA Adapter GEMM in rotated domain
         if self.rank > 0 and self.lora_A is not None and self.lora_B is not None and not self.is_merged:

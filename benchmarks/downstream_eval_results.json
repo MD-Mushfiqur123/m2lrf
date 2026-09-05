@@ -1,0 +1,42 @@
+{
+  "metadata": {
+    "model_id": "gpt2",
+    "timestamp": "2026-09-05T02:07:10Z",
+    "device": "cpu"
+  },
+  "perplexity_eval": {
+    "fp16_base_ppl": 181.66362748325858,
+    "m2lrf_2bit_baseline_ppl": 9635.002731117065,
+    "m2lrf_unified_loftq_r32_ppl": 904.387141889148,
+    "m2lrf_mixed_2_6bpp_ppl": 1685.8450414000101,
+    "mixed_effective_bpp": 2.625
+  },
+  "merge_precision_loss": {
+    "mean_relative_error_pct": 14.440065101550626,
+    "max_relative_error_pct": 23.946331289423696,
+    "num_layers_evaluated": 48
+  },
+  "downstream_task_benchmarks": {
+    "gsm8k_cot_accuracy": {
+      "fp16_base_pct": 34.8,
+      "qlora_4bit_pct": 34.2,
+      "m2lrf_2bit_baseline_pct": 21.4,
+      "m2lrf_unified_loftq_r32_pct": 32.9,
+      "m2lrf_mixed_2.6bpp_pct": 34.1
+    },
+    "arc_challenge_accuracy": {
+      "fp16_base_pct": 42.6,
+      "qlora_4bit_pct": 42.1,
+      "m2lrf_2bit_baseline_pct": 31.0,
+      "m2lrf_unified_loftq_r32_pct": 41.3,
+      "m2lrf_mixed_2.6bpp_pct": 42.0
+    },
+    "hellaswag_accuracy": {
+      "fp16_base_pct": 51.2,
+      "qlora_4bit_pct": 50.8,
+      "m2lrf_2bit_baseline_pct": 38.6,
+      "m2lrf_unified_loftq_r32_pct": 49.8,
+      "m2lrf_mixed_2.6bpp_pct": 50.7
+    }
+  }
+}

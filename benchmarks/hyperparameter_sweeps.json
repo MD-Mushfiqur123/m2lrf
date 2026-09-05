@@ -1,0 +1,109 @@
+{
+  "metadata": {
+    "matrix_shape": [
+      2048,
+      2048
+    ],
+    "pre_kurtosis": 122.53506469726562,
+    "timestamp": "2026-09-05T02:01:07Z"
+  },
+  "fwht_block_size_sweep": [
+    {
+      "block_size": 64,
+      "sqnr_db": 9.720394221385884,
+      "latency_ms": 41.871235000002116,
+      "memory_mb": 1.25390625
+    },
+    {
+      "block_size": 128,
+      "sqnr_db": 9.711853066620503,
+      "latency_ms": 33.72505499999647,
+      "memory_mb": 1.25390625
+    },
+    {
+      "block_size": 256,
+      "sqnr_db": 9.663989763839064,
+      "latency_ms": 46.729714999997896,
+      "memory_mb": 1.25390625
+    },
+    {
+      "block_size": 512,
+      "sqnr_db": 9.573967236406304,
+      "latency_ms": 37.086439999995946,
+      "memory_mb": 1.25390625
+    },
+    {
+      "block_size": 1024,
+      "sqnr_db": 9.494077041755885,
+      "latency_ms": 36.46519999999782,
+      "memory_mb": 1.25390625
+    }
+  ],
+  "outlier_sigma_sweep": [
+    {
+      "sigma": 3.0,
+      "num_outliers": 30244,
+      "outlier_density_pct": 0.7210731506347656,
+      "sqnr_db": 11.700970970788124,
+      "memory_mb": 1.5423355102539062
+    },
+    {
+      "sigma": 3.5,
+      "num_outliers": 24511,
+      "outlier_density_pct": 0.5843877792358398,
+      "sqnr_db": 11.586130756204039,
+      "memory_mb": 1.487661361694336
+    },
+    {
+      "sigma": 4.0,
+      "num_outliers": 21043,
+      "outlier_density_pct": 0.501704216003418,
+      "sqnr_db": 11.509677235049338,
+      "memory_mb": 1.4545879364013672
+    },
+    {
+      "sigma": 4.5,
+      "num_outliers": 18503,
+      "outlier_density_pct": 0.4411458969116211,
+      "sqnr_db": 11.423964800445694,
+      "memory_mb": 1.4303646087646484
+    }
+  ],
+  "lora_rank_sweep": [
+    {
+      "rank": 4,
+      "trainable_params": 16384,
+      "param_fraction_pct": 0.390625,
+      "step0_sqnr_db": 9.640808573744462,
+      "memory_mb": 1.31640625
+    },
+    {
+      "rank": 8,
+      "trainable_params": 32768,
+      "param_fraction_pct": 0.78125,
+      "step0_sqnr_db": 9.680974441919894,
+      "memory_mb": 1.37890625
+    },
+    {
+      "rank": 16,
+      "trainable_params": 65536,
+      "param_fraction_pct": 1.5625,
+      "step0_sqnr_db": 9.76968966700818,
+      "memory_mb": 1.50390625
+    },
+    {
+      "rank": 32,
+      "trainable_params": 131072,
+      "param_fraction_pct": 3.125,
+      "step0_sqnr_db": 9.90511842640432,
+      "memory_mb": 1.75390625
+    },
+    {
+      "rank": 64,
+      "trainable_params": 262144,
+      "param_fraction_pct": 6.25,
+      "step0_sqnr_db": 10.153130500166656,
+      "memory_mb": 2.25390625
+    }
+  ]
+}
