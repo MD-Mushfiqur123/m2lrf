@@ -30,6 +30,12 @@ from m2lrf.kernels.fast_fused_linear_ce import (
 from m2lrf.kernels.fast_kl_div import (
     fast_kl_divergence
 )
+from m2lrf.kernels.kivi_kv_cache import (
+    KIVIKVCache
+)
+from m2lrf.kernels.quarot_transform import (
+    QuaRotLinear
+)
 
 __all__ = [
     "fast_cross_entropy_loss",
@@ -44,5 +50,7 @@ __all__ = [
     "FastLoRAFunction",
     "fused_linear_cross_entropy",
     "FusedLinearCrossEntropyFunction",
-    "fast_kl_divergence"
+    "fast_kl_divergence",
+    "KIVIKVCache",
+    "QuaRotLinear"
 ]

@@ -100,7 +100,9 @@ from m2lrf.kernels import (
     fast_swiglu,
     fast_lora_forward,
     fused_linear_cross_entropy,
-    fast_kl_divergence
+    fast_kl_divergence,
+    KIVIKVCache,
+    QuaRotLinear
 )
 
 # Unsloth-Inspired Model Loaders & Patchers
@@ -150,7 +152,8 @@ from m2lrf.optimizers import AdamW8bit
 # PEFT-Inspired Advanced Adapters
 from m2lrf.adapters import (
     M2LRFDoRALinear,
-    M2LRFLoHaLinear
+    M2LRFLoHaLinear,
+    M2LRFPiSSALinear
 )
 
 # Torchtune-Inspired Hardware Profilers
@@ -173,6 +176,9 @@ __all__ = [
     "AdamW8bit",
     "M2LRFDoRALinear",
     "M2LRFLoHaLinear",
+    "M2LRFPiSSALinear",
+    "KIVIKVCache",
+    "QuaRotLinear",
     "MemoryTracker",
     "SequencePacker",
     "CompletionOnlyDataCollator",
