@@ -322,7 +322,7 @@ $$\text{Bitrate}_{\text{metadata}} = \frac{8\text{ bits}}{G} + \frac{32\text{ bi
 
 $$\text{Bitrate}_{\text{total}} = 2.000\text{ bpp (packed dual-basis)} + 0.064\text{ bpp (DQ scales)} = \mathbf{2.064\text{ bpp}}$$
 
-Double Quantization compresses scale metadata by **$74.4\% - 87.2\%$**, locking the net storage footprint at **$2.064\text{ bpp}$** (a negligible $3.2\%$ overhead over theoretical 2.00 bpp) while preserving the full $11.85\text{ dB}$ SQNR capability.
+Double Quantization compresses scale metadata by **$74.4\% - 87.2\%$**, locking the net storage footprint at **$2.064\text{ bpp}$** (a negligible $3.2\%$ overhead over theoretical 2.00 bpp) while preserving group-scaling reconstruction fidelity ($9.53\text{ dB}$ for $G=32$, and $9.66\text{ dB}$ with FWHT pre-rotation).
 
 ## 4.5 Numerical Stability Safeguards and Gradient Norm Bounding
 
@@ -503,8 +503,8 @@ $$\mathcal{C}_{\text{M-2LRF}} = \{-\alpha_1, -\alpha_0, +\alpha_0, +\alpha_1\} \
 |---|---|---|---|
 | **Precision / Bitrate** | $4.00\text{ bpp}$ ($4.127\text{ bpp}$ with DQ) | **$2.00\text{ bpp}$ ($2.064\text{ bpp}$ with DQ)** | **$50.0\%$ Exact Storage Reduction** |
 | **Centroid Count ($K$)** | $16\text{ non-linear centroids}$ | **$4\text{ structured dual-basis centroids}$** | $4\times$ smaller discrete state space |
-| **Theoretical Gaussian SQNR**| $20.22\text{ dB}$ ($\text{MSE} \approx 0.0095 \sigma^2$) | **$9.30\text{ dB}$ (Global) / $11.85\text{ dB}$ (Group-128)** | $\Delta = -8.37\text{ dB}$ to $-10.92\text{ dB}$ baseline gap |
-| **Variance Preservation (Step-0)**| $99.05\%$ of parameter energy | **$88.25\%$ (Global) / $93.47\%$ (Group-128)** | $5.58\% - 10.80\%$ residual variance gap |
+| **Reconstruction SQNR** | $20.22\text{ dB}$ (NF4 Gaussian Bound) | **$8.38\text{ dB}$ (Per-Row) / $9.53\text{ dB}$ (Group-32)** | $\Delta = -10.69\text{ dB}$ to $-11.84\text{ dB}$ baseline gap |
+| **Variance Preservation (Step-0)**| $99.05\%$ of parameter energy | **$88.25\%$ (Per-Row) / $91.40\%$ (Group-32)** | $7.65\% - 10.80\%$ residual variance gap |
 | **Adapter Initialization Policy**| Zero init ($\mathbf{B}=\mathbf{0}, \Delta \mathbf{W}=\mathbf{0}$) | **Truncated SVD Residual ($\mathbf{B}_{\text{init}} = \mathbf{U}_r \mathbf{\Sigma}_r^{1/2}$)** | M-2LRF actively recovers spectral deficit at step 0 |
 | **Dequantization Execution** | Decoupled CUDA global buffer unpack | **In-SRAM Fused Register MMA (Triton)** | M-2LRF eliminates intermediate global VRAM traffic |
 
