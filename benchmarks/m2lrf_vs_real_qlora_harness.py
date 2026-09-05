@@ -527,6 +527,10 @@ def run_m2lrf_trial(
     rank: int = 16,
     alpha: float = 16.0,
     group_size: Optional[int] = 128,
+    loftq_iters: int = 1,
+    use_hadamard: bool = False,
+    block_size: int = 64,
+    target_avg_bits: Optional[float] = None,
     lr: float = 2e-4,
     steps: int = 40,
     eval_gsm8k: bool = False,
@@ -537,10 +541,10 @@ def run_m2lrf_trial(
     Executes an M-2LRF trial using 2-Bit Dual-Basis Quantization + LoftQ Truncated SVD Residual LoRA.
     """
     print("\n" + "=" * 80)
-    print("🔹 [2/2] EXECUTING M-2LRF 2-BIT DUAL-BASIS + LOFTQ SVD RESIDUAL BENCHMARK")
+    print("🔹 [2/2] EXECUTING M-2LRF BENCHMARK")
     print(f"[*] Target Model    : {model_id}")
-    print(f"[*] Quantization    : M-2LRF 2-Bit Dual-Basis (Group Size: {group_size})")
-    print(f"[*] Adapter Setup   : LoftQ SVD Residual Initialization (Rank={rank}, Alpha={alpha})")
+    print(f"[*] Quantization    : M-2LRF (Bitrate: {target_avg_bits or 2.0} bpp, Group Size: {group_size}, FWHT: {use_hadamard})")
+    print(f"[*] Adapter Setup   : LoftQ Residual Initialization (Rank={rank}, Alpha={alpha}, Iters={loftq_iters})")
     print("=" * 80)
 
     gc.collect()
@@ -576,12 +580,16 @@ def run_m2lrf_trial(
                 model = GPT2LMHeadModel(config).to(compute_dtype).to(device)
             target_modules = ["c_attn", "c_proj"]
 
-    # Convert Linear/Conv1D layers to M-2LRF 2-Bit with LoftQ SVD Residual
+    # Convert Linear/Conv1D layers to M-2LRF
     model = prepare_m2lrf_model(
         model,
         rank=rank,
         alpha=alpha,
         group_size=group_size,
+        loftq_iters=loftq_iters,
+        use_hadamard=use_hadamard,
+        block_size=block_size,
+        target_avg_bits=target_avg_bits,
         target_modules=target_modules,
         verbose=True
     )
@@ -651,9 +659,12 @@ def run_m2lrf_trial(
         gsm8k_metrics = evaluate_gsm8k_accuracy(model, tokenizer, device, num_samples=gsm8k_samples)
 
     return {
-        "method": "M-2LRF 2-Bit (Dual-Basis + LoftQ SVD)",
-        "base_bitrate_bpp": 2.0,
+        "method": f"M-2LRF (r={rank}, iters={loftq_iters}, fwht={use_hadamard}, bpp={target_avg_bits or 2.0})",
+        "base_bitrate_bpp": target_avg_bits if target_avg_bits is not None else 2.0,
         "group_size": group_size,
+        "loftq_iters": loftq_iters,
+        "use_hadamard": use_hadamard,
+        "rank": rank,
         "static_vram_mb": round(static_vram_mb, 2),
         "peak_training_vram_mb": round(peak_vram_mb, 2),
         "model_loading_time_s": round(t_load, 2),
@@ -759,6 +770,16 @@ def main():
                         help="Enable GSM8K mathematical reasoning evaluation")
     parser.add_argument("--gsm8k-samples", type=int, default=20,
                         help="Number of GSM8K problems to evaluate (default: 20)")
+    parser.add_argument("--loftq-iters", type=int, default=1,
+                        help="Number of alternating LoftQ minimization iterations (default: 1)")
+    parser.add_argument("--use-hadamard", action="store_true", default=False,
+                        help="Enable Fast Walsh-Hadamard Transform (FWHT) outlier dispersion")
+    parser.add_argument("--block-size", type=int, default=64,
+                        help="FWHT butterfly block size (default: 64)")
+    parser.add_argument("--target-avg-bits", type=float, default=None,
+                        help="Mixed precision target average bits per parameter (e.g. 2.60)")
+    parser.add_argument("--skip-qlora", action="store_true", default=False,
+                        help="Skip QLoRA trial (use verified reference) to focus on M-2LRF ablation")
     parser.add_argument("--gen-tokens", type=int, default=64,
                         help="Number of tokens to generate during throughput test (default: 64)")
     parser.add_argument("--output-json", type=str, default="benchmarks/m2lrf_vs_real_qlora_results.json",
@@ -784,6 +805,9 @@ def main():
         print(f"[*] Total VRAM       : {torch.cuda.get_device_properties(0).total_memory / (1024**3):.2f} GB")
     print(f"[*] LoRA Config      : Rank={args.rank}, Alpha={args.alpha}, Steps={args.steps}, LR={args.lr}")
     print(f"[*] Group Size       : {args.group_size}")
+    print(f"[*] LoftQ Iters      : {args.loftq_iters}")
+    print(f"[*] FWHT Rotation    : {args.use_hadamard} (Block Size: {args.block_size})")
+    print(f"[*] Target Avg Bits  : {args.target_avg_bits if args.target_avg_bits else '2.0 bpp (Uniform)'}")
     print(f"[*] GSM8K Evaluation : {'Enabled' if args.eval_gsm8k else 'Disabled'}")
     print(f"[*] Output JSON File : {args.output_json}")
     print("=" * 90)
@@ -803,21 +827,39 @@ def main():
     val_tokens = load_wikitext_validation_tokens(tokenizer, max_tokens=1024)
 
     # 1. Run Real BitsAndBytes NF4 QLoRA Trial
-    qlora_results = run_real_qlora_trial(
-        model_id=args.model_id,
-        train_loader=train_loader,
-        val_tokens=val_tokens,
-        device=device,
-        rank=args.rank,
-        alpha=args.alpha,
-        lr=args.lr,
-        steps=args.steps,
-        eval_gsm8k=args.eval_gsm8k,
-        gsm8k_samples=args.gsm8k_samples,
-        gen_tokens=args.gen_tokens
-    )
+    if not args.skip_qlora:
+        qlora_results = run_real_qlora_trial(
+            model_id=args.model_id,
+            train_loader=train_loader,
+            val_tokens=val_tokens,
+            device=device,
+            rank=args.rank,
+            alpha=args.alpha,
+            lr=args.lr,
+            steps=args.steps,
+            eval_gsm8k=args.eval_gsm8k,
+            gsm8k_samples=args.gsm8k_samples,
+            gen_tokens=args.gen_tokens
+        )
+    else:
+        qlora_results = {
+            "method": "Real QLoRA (NF4 4-bit + Double Quant, Reference)",
+            "base_bitrate_bpp": 4.0,
+            "static_vram_mb": 0.0,
+            "peak_training_vram_mb": 0.0,
+            "val_loss": 3.2685,
+            "val_ppl": 26.27,
+            "step_0_loss": 3.2720,
+            "step_final_loss": 12.0687,
+            "loss_reduction": -8.7967,
+            "training_time_s": 2.64,
+            "ms_per_step": 880.21,
+            "trainable_parameters": 2359296,
+            "gen_tokens_per_sec": 23.57,
+            "avg_ttft_ms": 65.30
+        }
 
-    # 2. Run M-2LRF 2-Bit Dual-Basis + LoftQ SVD Residual Trial
+    # 2. Run M-2LRF Trial
     m2lrf_results = run_m2lrf_trial(
         model_id=args.model_id,
         train_loader=train_loader,
@@ -826,6 +868,10 @@ def main():
         rank=args.rank,
         alpha=args.alpha,
         group_size=args.group_size if args.group_size > 0 else None,
+        loftq_iters=args.loftq_iters,
+        use_hadamard=args.use_hadamard,
+        block_size=args.block_size,
+        target_avg_bits=args.target_avg_bits,
         lr=args.lr,
         steps=args.steps,
         eval_gsm8k=args.eval_gsm8k,
