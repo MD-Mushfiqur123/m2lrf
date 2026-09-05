@@ -4,10 +4,13 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "m2lrf"
-version = "1.0.0"
-description = "2-Bit Dual-Basis Quantization & Fine-Tuning Engine with LoftQ SVD Initialization"
+version = "2.0.0"
+description = "Enterprise 2-Bit Dual-Basis LLM Training & Quantization Engine (Unsloth + Axolotl Merged)"
 readme = "README.md"
 requires-python = ">=3.8"
+
+[project.scripts]
+m2lrf = "m2lrf.cli.main:main"
 license = { text = "MIT" }
 authors = [
     { name = "MD-Mushfiqur Rahim", email = "mushfiqur.research@gmail.com" }

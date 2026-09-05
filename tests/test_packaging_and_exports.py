@@ -78,7 +78,7 @@ from m2lrf import (
 class TestPackagingAndExports(unittest.TestCase):
     def test_package_metadata(self):
         """Verify package version, author, and docstring."""
-        self.assertEqual(m2lrf.__version__, "1.0.0")
+        self.assertEqual(m2lrf.__version__, "2.0.0")
         self.assertEqual(m2lrf.__author__, "MD-Mushfiqur Rahim")
         self.assertIsNotNone(m2lrf.__doc__)
         self.assertIn("M-2LRF", m2lrf.__doc__)

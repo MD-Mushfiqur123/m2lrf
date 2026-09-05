@@ -1,0 +1,35 @@
+﻿# M-2LRF Production Fine-Tuning Config: LLaMA-3 8B SFT
+base_model: meta-llama/Meta-Llama-3-8B
+model_type: LlamaForCausalLM
+
+# 2-Bit Quantization Settings (FWHT + Rank 64 Champion Configuration)
+quantization:
+  method: m2lrf_2bit
+  rank: 64
+  alpha: 64.0
+  use_hadamard: true
+  block_size: 64
+  group_size: 128
+  loftq_iters: 1
+  target_avg_bits: 2.0
+
+# Dataset & Axolotl-style Sequence Packing
+datasets:
+  - path: tatsu-lab/alpaca
+    type: alpaca
+    split: train
+    sample_packing: true
+    max_seq_length: 4096
+
+# Hyperparameters & Optimization
+training:
+  batch_size: 2
+  gradient_accumulation_steps: 4
+  learning_rate: 0.0002
+  num_train_epochs: 1
+  warmup_ratio: 0.05
+  weight_decay: 0.01
+  logging_steps: 10
+  output_dir: ./outputs/llama3_8b_2bit_sft
+
+export_format: hf

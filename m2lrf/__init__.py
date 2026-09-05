@@ -91,10 +91,77 @@ from m2lrf.deep_benchmark import (
     run_benchmark_comparison
 )
 
-__version__ = "1.0.0"
+# Unsloth-Inspired Fast Kernels
+from m2lrf.kernels import (
+    fast_cross_entropy_loss,
+    FastCrossEntropyLoss,
+    FastRMSNorm,
+    fast_apply_rotary_pos_emb,
+    fast_swiglu,
+    fast_lora_forward
+)
+
+# Unsloth-Inspired Model Loaders & Patchers
+from m2lrf.models import (
+    FastM2LRFModel,
+    BaseArchitecturePatcher,
+    LlamaPatcher,
+    QwenPatcher,
+    MistralPatcher
+)
+
+# Axolotl-Inspired Data & Packing
+from m2lrf.data import (
+    SequencePacker,
+    CompletionOnlyDataCollator,
+    get_formatter,
+    AlpacaFormatter,
+    ChatMLFormatter,
+    Llama3Formatter,
+    DPOFormatter
+)
+
+# Axolotl-Inspired Trainers
+from m2lrf.trainers import (
+    M2LRFSFTTrainer,
+    M2LRFDPOTrainer,
+    M2LRFORPOTrainer
+)
+
+# Axolotl-Inspired Declarative Config
+from m2lrf.config import (
+    M2LRFConfig,
+    QuantConfig,
+    DatasetConfig,
+    TrainingArgsConfig
+)
+
+# Multi-Format Production Exporters
+from m2lrf.export import (
+    export_to_huggingface,
+    export_to_gguf
+)
+
+__version__ = "2.0.0"
 __author__ = "MD-Mushfiqur Rahim"
 
 __all__ = [
+    # Fast Models & Enterprise Entry Points
+    "FastM2LRFModel",
+    "FastCrossEntropyLoss",
+    "fast_cross_entropy_loss",
+    "FastRMSNorm",
+    "fast_apply_rotary_pos_emb",
+    "fast_swiglu",
+    "fast_lora_forward",
+    "SequencePacker",
+    "CompletionOnlyDataCollator",
+    "M2LRFSFTTrainer",
+    "M2LRFDPOTrainer",
+    "M2LRFORPOTrainer",
+    "M2LRFConfig",
+    "export_to_huggingface",
+    "export_to_gguf",
     # Canonical Unified & Specialized Layers
     "M2LRFUnifiedLinear",
     "M2LRF2BitLinear",

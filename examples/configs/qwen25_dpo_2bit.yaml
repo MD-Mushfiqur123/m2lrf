@@ -1,0 +1,34 @@
+﻿# M-2LRF Production Preference Alignment Config: Qwen2.5-7B DPO
+base_model: Qwen/Qwen2.5-7B
+model_type: Qwen2ForCausalLM
+
+# 2-Bit Quantization Settings (FWHT + Rank 64 Champion Configuration)
+quantization:
+  method: m2lrf_2bit
+  rank: 64
+  alpha: 64.0
+  use_hadamard: true
+  block_size: 64
+  group_size: 128
+  loftq_iters: 1
+  target_avg_bits: 2.0
+
+# DPO Preference Dataset
+datasets:
+  - path: Anthropic/hh-rlhf
+    type: dpo
+    split: train
+    max_seq_length: 2048
+
+# Hyperparameters & Optimization
+training:
+  batch_size: 1
+  gradient_accumulation_steps: 8
+  learning_rate: 0.00005
+  num_train_epochs: 1
+  warmup_ratio: 0.1
+  weight_decay: 0.01
+  logging_steps: 5
+  output_dir: ./outputs/qwen25_7b_2bit_dpo
+
+export_format: gguf
