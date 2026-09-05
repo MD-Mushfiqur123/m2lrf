@@ -159,6 +159,35 @@ from m2lrf.adapters import (
 # Torchtune-Inspired Hardware Profilers
 from m2lrf.utils import MemoryTracker
 
+# High-Throughput Serving Engine (vLLM & SGLang Inspired)
+from m2lrf.serving import (
+    BlockSpaceManager,
+    BlockAllocator,
+    PhysicalBlock,
+    Sequence,
+    PagedKVCache,
+    paged_attention_v1,
+    paged_attention_v2,
+    RadixPrefixCache,
+    SpeculativeEngine,
+    LLMEngine,
+    SamplingParams,
+    RequestOutput,
+)
+
+# Enterprise Distributed Engine (Megatron-LM & DeepSpeed Inspired)
+from m2lrf.distributed import (
+    ColumnParallel2BitLinear,
+    RowParallel2BitLinear,
+    ParallelMLP,
+    RingAttention,
+    ZeROStage1Optimizer,
+    ZeROStage2Optimizer,
+    ZeROStage3Partitioner,
+    PipelineStage,
+    OneForwardOneBackwardEngine,
+)
+
 __version__ = "2.0.0"
 __author__ = "MD-Mushfiqur Rahim"
 
@@ -253,5 +282,28 @@ __all__ = [
     "m2lrf_triton_matmul",
     "m2lrf_matmul_fallback",
     "Uniform4BitLinearLoRA",
-    "run_benchmark_comparison"
+    "run_benchmark_comparison",
+    # Serving Engine
+    "BlockSpaceManager",
+    "BlockAllocator",
+    "PhysicalBlock",
+    "Sequence",
+    "PagedKVCache",
+    "paged_attention_v1",
+    "paged_attention_v2",
+    "RadixPrefixCache",
+    "SpeculativeEngine",
+    "LLMEngine",
+    "SamplingParams",
+    "RequestOutput",
+    # Distributed Training
+    "ColumnParallel2BitLinear",
+    "RowParallel2BitLinear",
+    "ParallelMLP",
+    "RingAttention",
+    "ZeROStage1Optimizer",
+    "ZeROStage2Optimizer",
+    "ZeROStage3Partitioner",
+    "PipelineStage",
+    "OneForwardOneBackwardEngine",
 ]

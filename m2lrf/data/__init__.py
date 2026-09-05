@@ -1,4 +1,4 @@
-﻿"""
+"""
 M-2LRF Advanced Data & Sequence Packing Engine (Axolotl-Inspired)
 ==================================================================
 """
@@ -13,6 +13,11 @@ from m2lrf.data.prompt_formatters import (
 )
 from m2lrf.data.sample_packing import SequencePacker
 from m2lrf.data.collators import CompletionOnlyDataCollator
+from m2lrf.data.synthetic_reasoning import (
+    SyntheticReasoningGenerator,
+    MathRuleVerifier,
+    MathProblem,
+)
 
 __all__ = [
     "PromptFormatter",
@@ -22,5 +27,8 @@ __all__ = [
     "DPOFormatter",
     "get_formatter",
     "SequencePacker",
-    "CompletionOnlyDataCollator"
+    "CompletionOnlyDataCollator",
+    "SyntheticReasoningGenerator",
+    "MathRuleVerifier",
+    "MathProblem",
 ]
