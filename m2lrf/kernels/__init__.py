@@ -1,4 +1,4 @@
-﻿"""
+"""
 M-2LRF High-Performance GPU Kernels (Unsloth-Inspired)
 ======================================================
 """
@@ -23,6 +23,13 @@ from m2lrf.kernels.fast_lora import (
     fast_lora_forward,
     FastLoRAFunction
 )
+from m2lrf.kernels.fast_fused_linear_ce import (
+    fused_linear_cross_entropy,
+    FusedLinearCrossEntropyFunction
+)
+from m2lrf.kernels.fast_kl_div import (
+    fast_kl_divergence
+)
 
 __all__ = [
     "fast_cross_entropy_loss",
@@ -34,5 +41,8 @@ __all__ = [
     "fast_swiglu",
     "FastSwiGLUFunction",
     "fast_lora_forward",
-    "FastLoRAFunction"
+    "FastLoRAFunction",
+    "fused_linear_cross_entropy",
+    "FusedLinearCrossEntropyFunction",
+    "fast_kl_divergence"
 ]

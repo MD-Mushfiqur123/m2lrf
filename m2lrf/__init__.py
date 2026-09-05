@@ -98,7 +98,9 @@ from m2lrf.kernels import (
     FastRMSNorm,
     fast_apply_rotary_pos_emb,
     fast_swiglu,
-    fast_lora_forward
+    fast_lora_forward,
+    fused_linear_cross_entropy,
+    fast_kl_divergence
 )
 
 # Unsloth-Inspired Model Loaders & Patchers
@@ -142,6 +144,18 @@ from m2lrf.export import (
     export_to_gguf
 )
 
+# BitsAndBytes-Inspired 8-Bit Optimizers
+from m2lrf.optimizers import AdamW8bit
+
+# PEFT-Inspired Advanced Adapters
+from m2lrf.adapters import (
+    M2LRFDoRALinear,
+    M2LRFLoHaLinear
+)
+
+# Torchtune-Inspired Hardware Profilers
+from m2lrf.utils import MemoryTracker
+
 __version__ = "2.0.0"
 __author__ = "MD-Mushfiqur Rahim"
 
@@ -150,10 +164,16 @@ __all__ = [
     "FastM2LRFModel",
     "FastCrossEntropyLoss",
     "fast_cross_entropy_loss",
+    "fused_linear_cross_entropy",
+    "fast_kl_divergence",
     "FastRMSNorm",
     "fast_apply_rotary_pos_emb",
     "fast_swiglu",
     "fast_lora_forward",
+    "AdamW8bit",
+    "M2LRFDoRALinear",
+    "M2LRFLoHaLinear",
+    "MemoryTracker",
     "SequencePacker",
     "CompletionOnlyDataCollator",
     "M2LRFSFTTrainer",
