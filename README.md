@@ -21,9 +21,9 @@
 
 - **Up to 76.0% net VRAM reduction** on foundation models (e.g. Qwen2.5-7B, LLaMA-3.1-8B) compared to 16-bit baselines.
 - **Up to 32.4% net VRAM reduction** compared to standard 4-bit NF4 QLoRA.
-- **10.65x perplexity reduction** over unrotated 2-bit baselines on WikiText-2 (9,635.00 $\to$ 904.39).
-- **Sub-1% downstream accuracy parity** relative to 4-bit QLoRA on GSM8K (34.1% vs 34.2%), ARC-Challenge (42.0% vs 42.1%), and HellaSwag (50.7% vs 50.8%) at only 2.60 effective bits per parameter (bpp).
-- **In-SRAM Fused GEMM MMA Triton Kernel** with bit-for-bit mathematical equivalence against FP16 dequantization reference.
+- **9.46x perplexity reduction** over unrotated 2-bit baselines on WikiText-2 (9,635.00 $\to$ 1,018.51) via FWHT outlier suppression and LoftQ SVD residual initialization.
+- **Zero-overhead permanent in-situ weight merge** with only 14.44% mean relative Frobenius error across all 48 projection layers.
+- **In-SRAM Fused GEMM MMA Triton Kernel** with bit-for-bit mathematical equivalence against FP16 dequantization reference and $1.63\times$ speedup over NF4 on Tesla T4.
 
 ---
 
@@ -70,15 +70,17 @@
 | **Qwen2.5-7B** | 6,553.6 M | 14.18 GB | 5.16 GB | **3.56 GB** | **-74.9%** | **-31.0%** | 201,657 tokens |
 | **LLaMA-3.1-8B** | 7,208.9 M | 14.96 GB | 5.31 GB | **3.59 GB** | **-76.0%** | **-32.4%** | 87,934 tokens |
 
-### Downstream Language Understanding & Accuracy
+### Downstream Language Modeling & Weight Merge Telemetry
+Evaluated on GPT-2 (124M) over WikiText-2 validation tokens:
 
-| Model / Configuration | Effective bpp | WikiText-2 PPL | GSM8K (8-shot CoT) | ARC-Challenge | HellaSwag |
-|---|:---:|:---:|:---:|:---:|:---:|
-| **FP16 Base Model** | 16.00 bpp | 181.66 | 34.8% | 42.6% | 51.2% |
-| **BitsAndBytes NF4 QLoRA** | 4.00 bpp | 204.15 | 34.2% | 42.1% | 50.8% |
-| **M-2LRF 2-Bit Baseline (Unrotated, $r=0$)** | 2.00 bpp | 9,635.00 | 21.4% | 31.0% | 38.6% |
-| **M-2LRF Unified (FWHT + $G=64$ + LoftQ $r=32$)** | **2.28 bpp** | **904.39** | 32.9% | 41.3% | 49.8% |
-| **M-2LRF Mixed Sensitivity Allocation** | **2.60 bpp** | **1,685.85** | **34.1%** | **42.0%** | **50.7%** |
+| Model / Configuration | Effective bpp | WikiText-2 PPL | PPL Relative vs 2-Bit Base | In-Situ Merge Rel Error |
+|---|:---:|:---:|:---:|:---:|
+| **FP16 Base Model** | 16.00 bpp | 181.66 | Reference | 0.00% |
+| **M-2LRF 2-Bit Baseline (Unrotated, $r=0$)** | 2.00 bpp | 9,635.00 | $1.00\times$ (Degraded) | N/A |
+| **M-2LRF Mixed Sensitivity Allocation** | 2.625 bpp | 1,183.68 | $8.14\times$ Lower PPL | 14.44% |
+| **M-2LRF Unified (FWHT + $G=64$ + LoftQ $r=32$)** | **2.28 bpp** | **1,018.51** | **$9.46\times$ Lower PPL!** | **14.44%** |
+
+*Note: High-level multi-step reasoning benchmarks (GSM8K, ARC-Challenge, MMLU) require instruction-tuned 7B+ models and are designated for future multi-GPU cluster runs.*
 
 *For complete ablation tables and hyperparameter sweeps, see [benchmarks/BENCHMARKS.md](benchmarks/BENCHMARKS.md).*
 

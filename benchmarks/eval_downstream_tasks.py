@@ -100,49 +100,26 @@ def evaluate_downstream(output_path='benchmarks/downstream_eval_results.json'):
     print(f'  Mean Relative Merge Error: {mean_merge_loss * 100.0:.4f}%')
     print(f'  Max Relative Merge Error : {max_merge_loss * 100.0:.4f}%')
 
-    downstream_benchmarks = {
-        'gsm8k_cot_accuracy': {
-            'fp16_base_pct': 34.8,
-            'qlora_4bit_pct': 34.2,
-            'm2lrf_2bit_baseline_pct': 21.4,
-            'm2lrf_unified_loftq_r32_pct': 32.9,
-            'm2lrf_mixed_2.6bpp_pct': 34.1
-        },
-        'arc_challenge_accuracy': {
-            'fp16_base_pct': 42.6,
-            'qlora_4bit_pct': 42.1,
-            'm2lrf_2bit_baseline_pct': 31.0,
-            'm2lrf_unified_loftq_r32_pct': 41.3,
-            'm2lrf_mixed_2.6bpp_pct': 42.0
-        },
-        'hellaswag_accuracy': {
-            'fp16_base_pct': 51.2,
-            'qlora_4bit_pct': 50.8,
-            'm2lrf_2bit_baseline_pct': 38.6,
-            'm2lrf_unified_loftq_r32_pct': 49.8,
-            'm2lrf_mixed_2.6bpp_pct': 50.7
-        }
-    }
-
     results = {
         'metadata': {
             'model_id': model_id,
             'timestamp': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()),
-            'device': str(device)
+            'device': str(device),
+            'note': 'Evaluated on GPT-2 (124M). High-level reasoning benchmarks (GSM8K, ARC, MMLU) require instruction-tuned 7B+ models and are reserved for future cluster runs.'
         },
         'perplexity_eval': {
             'fp16_base_ppl': base_ppl,
             'm2lrf_2bit_baseline_ppl': base_2bit_ppl,
             'm2lrf_unified_loftq_r32_ppl': unified_ppl,
             'm2lrf_mixed_2_6bpp_ppl': mixed_ppl,
-            'mixed_effective_bpp': eff_bpp
+            'mixed_effective_bpp': eff_bpp,
+            'perplexity_reduction_ratio': base_2bit_ppl / max(unified_ppl, 1e-6)
         },
         'merge_precision_loss': {
             'mean_relative_error_pct': mean_merge_loss * 100.0,
             'max_relative_error_pct': max_merge_loss * 100.0,
             'num_layers_evaluated': len(merge_losses)
-        },
-        'downstream_task_benchmarks': downstream_benchmarks
+        }
     }
 
     os.makedirs(os.path.dirname(output_path), exist_ok=True)

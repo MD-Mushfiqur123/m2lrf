@@ -48,7 +48,7 @@
    - 8.5 Comprehensive 8-Way Empirical Ablation Study & Architectural Unification
    - 8.6 Real Pretrained Weights Kurtosis Suppression & Spearman Rank Correlation
    - 8.7 Foundation Model Scaling Matrix (0.5B to 8B) & Hyperparameter Sweeps
-   - 8.8 Downstream Evaluation (WikiText-2, GSM8K, ARC, HellaSwag) & In-Situ Merge Loss
+   - 8.8 Downstream Language Modeling & Weight Merge Telemetry
 9. [Error Analysis, Theoretical Constraints & Comparative Study](#9-error-analysis-theoretical-constraints--comparative-study)
    - 9.1 Quantization Error Distribution and Spectral Decay
    - 9.2 Comparative Analysis with Contemporary Methods (AQLM, QuIP#, BitNet, LoftQ)
@@ -278,36 +278,24 @@ The reconstructed group-wise quantized weight vector is given by:
 
 $$\hat{\mathbf{w}}_{i, g} = \alpha_{0, i, g}^* \mathbf{T}_{0, i, g} + \alpha_{1, i, g}^* \mathbf{T}_{1, i, g}, \quad \text{subject to } \mathbf{T}_{0, i, g} \odot \mathbf{T}_{1, i, g} = \mathbf{0}$$
 
-### 4.4.2 Mathematical Proof: Raising the Gaussian SQNR Limit to 11.85 dB
+### 4.4.2 Theoretical & Empirical Analysis of Group-Wise Scaling Fidelity
 
-Let the global weight distribution be modeled as a non-stationary mixture of local Gaussian sub-vectors where the group variance $\sigma_g^2$ follows a heavy-tailed distribution across groups with global expectation $\mathbb{E}[\sigma_g^2] = \sigma_{\text{global}}^2$.
+Under ideal, identically distributed Gaussian assumptions, the Lloyd-Max distortion bound for 2-bit dual-basis scalar quantization is strictly:
+$$D^*(1) pprox 0.117464 \, \sigma^2 \implies \text{SQNR} pprox 9.3009\text{ dB}$$
 
-Under global row-wise quantization ($G = d_{\text{in}}$), the expected Mean Squared Error (MSE) is dictated by the global variance:
+In real pretrained transformer layers, however, weights do not follow a stationary, homogeneous distribution. Activation outliers and channel variance heteroscedasticity introduce severe localized distortion when quantized with a single global per-row scale.
 
-$$D_{\text{row}} = D^*(1) \cdot \sigma_{\text{global}}^2 \approx 0.117464 \, \sigma_{\text{global}}^2 \implies \text{SQNR}_{\text{row}} = 10 \log_{10}\left(\frac{\sigma_{\text{global}}^2}{0.117464 \sigma_{\text{global}}^2}\right) = \mathbf{9.3009\text{ dB}}$$
+When weight matrices are partitioned into localized groups of size $G \in \{32, 64\}$, each sub-vector $\mathbf{w}_g \in \mathbb{R}^G$ computes an independent local scale:
+$$\sigma_{i, g} = \sqrt{rac{1}{G} \sum_{k=0}^{G-1} (w_{i, gG+k} - \mu_{i, g})^2}$$
+This prevents isolated high-magnitude outlier channels from inflating the quantization step size $lpha_{0}, lpha_{1}$ of adjacent inlier coordinates.
 
-Under group-wise quantization with block size $G \in \{64, 128\}$, each sub-vector $\mathbf{w}_g$ achieves local Lloyd-Max optimality on its own scale $\sigma_g$:
+#### Empirical Verification Across Pretrained Transformer Weights:
+Across all 48 projection layers of pretrained GPT-2 (measured in `benchmarks/real_weights_sqnr_results.json`), group-wise scaling produces the following empirical reconstruction fidelity:
+- **Per-Row Baseline ($G = d_{\text{in}}$):** Mean $\text{SQNR} = \mathbf{8.38\text{ dB}}$ (Relative Frobenius error: $38.52\%$)
+- **Group Scaling ($G = 64$):** Mean $\text{SQNR} = \mathbf{9.09\text{ dB}}$ (Relative Frobenius error: $35.19\%$, $+0.71\text{ dB}$ lift)
+- **Group Scaling ($G = 32$):** Mean $\text{SQNR} = \mathbf{9.53\text{ dB}}$ (Relative Frobenius error: $33.41\%$, $+1.15\text{ dB}$ lift)
 
-$$D_g = \frac{1}{G} \mathbb{E}\left[\|\mathbf{w}_g - \hat{\mathbf{w}}_g\|_2^2\right] = D^*(1) \cdot \sigma_g^2 = 0.117464 \, \sigma_g^2$$
-
-The aggregate expected distortion across all $M = \frac{d_{\text{in}}}{G}$ groups is:
-
-$$\bar{D}_{\text{group}} = \frac{1}{M} \sum_{g=0}^{M-1} D_g = 0.117464 \cdot \left(\frac{1}{M} \sum_{g=0}^{M-1} \sigma_g^2\right)$$
-
-Let $\mathcal{S}_{\text{outlier}}$ denote the subset of groups containing heavy-tailed outlier activations ($|\mathcal{S}_{\text{outlier}}| \ll M$). For inlier groups $g \notin \mathcal{S}_{\text{outlier}}$, local variance is unpolluted by outlier magnitudes:
-
-$$\sigma_{\text{inlier}}^2 \approx (1 - \eta) \, \sigma_{\text{global}}^2, \quad \text{where } \eta \approx 0.4440 \text{ for transformer linear projections}$$
-
-Because outlier groups confine large errors to a minimal fraction of coordinates without inflating the quantization step size of inlier coordinates, the effective reconstruction error across the entire tensor, evaluated against the total signal variance $\sigma_{\text{global}}^2$, reduces to:
-
-$$\text{MSE}_{\text{eff}} = \mathbb{E}\left[\|\mathbf{W} - \hat{\mathbf{W}}\|_F^2\right] = 0.117464 \cdot (1 - \eta) \, \sigma_{\text{global}}^2 \approx 0.117464 \cdot 0.5560 \, \sigma_{\text{global}}^2 \approx 0.06531 \, \sigma_{\text{global}}^2$$
-
-We compute the resulting effective Signal-to-Quantization-Noise Ratio:
-
-$$\text{SQNR}_{\text{eff}} = 10 \log_{10}\left(\frac{\sigma_{\text{global}}^2}{\text{MSE}_{\text{eff}}}\right) = 10 \log_{10}\left(\frac{1.0}{0.06531}\right) = 10 \log_{10}(15.3116) \approx \mathbf{11.8504\text{ dB}}$$
-
-> **Theorem 2 (Group-Wise SQNR Elevation):**  
-> Group-wise partitioning at $G \in \{64, 128\}$ isolates intra-channel variance heteroscedasticity and heavy-tailed kurtosis. This reduces the effective reconstruction distortion from $0.117464 \sigma^2$ to $0.06531 \sigma^2$, mathematically elevating the achievable Gaussian SQNR from the global scalar bound of $9.3009\text{ dB}$ to $\mathbf{11.85\text{ dB}}$ without altering the underlying 2-bit discrete codebook. $\blacksquare$
+When combined with Fast Walsh-Hadamard Transform (FWHT) pre-rotation ($B=64$), outlier channels are dispersed into a homogeneous distribution, lifting mean SQNR to **$9.66\text{ dB}$** ($G=64 + \text{FWHT}$). With sparse outlier isolation ($\sigma=3.5$), reconstructed SQNR reaches **$11.59\text{ dB}$**.
 
 ### 4.4.3 Double Quantization (DQ) of Scale Metadata
 
@@ -554,48 +542,28 @@ $$\text{Time}_{\text{GEMM}} = \max\left( \frac{\text{Bytes Loaded}}{\text{Memory
    $$c_k = (\text{packed\_byte} \gg (2k)) \ \& \ 0\text{x}03$$
    Centroid values $(\pm \alpha_0, \pm \alpha_1)$ are multiplexed into register operands without lookup-table latency, and matrix accumulation occurs immediately via `tl.dot`.
 
-#### Empirical Latency Benchmark (NVIDIA Tesla T4 & RTX 4090, $d_{\text{in}}=4096, d_{\text{out}}=4096, B=1, S=512$):
+#### Empirical Latency Benchmark (NVIDIA Tesla T4, $d_{\text{in}}=4096, d_{\text{out}}=4096, B=1, S=512$):
 
-| Execution Engine | Memory Traffic / Forward Pass | Measured Latency (Tesla T4) | Measured Latency (RTX 4090) | Relative GEMM Speedup |
-|---|---|---|---|---|
-| **PyTorch FP16 Baseline** | $33.55\text{ MB}$ | $1.42\text{ ms}$ | $0.21\text{ ms}$ | $1.00\times$ (Reference) |
-| **BitsAndBytes NF4 Linear** | $8.65\text{ MB} + \text{Dequant Buffers}$ | $1.88\text{ ms}$ | $0.28\text{ ms}$ | $0.76\times$ (Dequant Overhead Bound) |
-| **M-2LRF Fused Triton GEMM** | **$4.33\text{ MB}$ (Zero Aux Buffers)** | **$1.15\text{ ms}$** | **$0.17\text{ ms}$** | **$1.63\times$ vs. NF4 ($1.23\times$ vs. FP16)** |
+| Execution Engine | Memory Traffic / Forward Pass | Measured Latency (Tesla T4) | Relative GEMM Speedup vs NF4 |
+|---|---|---|---|
+| **PyTorch FP16 Baseline** | $33.55\text{ MB}$ | $1.42\text{ ms}$ | $1.32\times$ |
+| **BitsAndBytes NF4 Linear** | $8.65\text{ MB} + \text{Dequant Buffers}$ | $1.88\text{ ms}$ | $1.00\times$ (Reference) |
+| **M-2LRF Fused Triton GEMM** | **$4.33\text{ MB}$ (Zero Aux Buffers)** | **$1.15\text{ ms}$** | **$1.63\times$ vs. NF4** |
 
-M-2LRF achieves a **$1.35\times - 1.64\times$ latency advantage over BitsAndBytes NF4** during token-by-token generation and low-batch forward propagation, directly validating the elimination of global memory traffic.
+M-2LRF achieves a **$1.63\times$ latency advantage over BitsAndBytes NF4** on NVIDIA Tesla T4 during token-by-token forward propagation, directly validating the elimination of global memory roundtrips.
 
-### 8.4.4 Convergence Dynamics Over Extended Step Schedules ($r=32, 64, \text{steps} \ge 500$)
+### 8.4.4 Theoretical Convergence Characteristics of SVD Residual Adapters
 
-A common failure mode in sub-4-bit post-training quantization is **asymptotic underfitting**, where a compressed model fails to reach target loss regardless of step count. To rigorously evaluate this, we analyze the training trajectories of M-2LRF and NF4 QLoRA across multiple adapter ranks ($r \in \{16, 32, 64\}$) and training durations up to $2,000$ steps on instruction fine-tuning datasets (`yahma/alpaca-cleaned`, `WikiText-2`):
+In extreme sub-4-bit quantization, conventional LoRA ($B=0, A \sim \mathcal{N}$) suffers from substantial initial loss degradation because the base weights begin in a severely perturbed state. M-2LRF addresses this by initializing adapter matrices via truncated SVD on the quantization residual $\mathbf{R} = \mathbf{W} - \mathbf{W}_{\text{base}}$ (the LoftQ paradigm).
 
-```
-Training Loss Convergence Trajectory (7B Model Fine-Tuning)
-Loss
- ^
-9.5 | * (M-2LRF r=16, Step 0: 9.08)
-9.0 |   * (M-2LRF r=64 SVD-Init, Step 0: 8.52)
-8.5 |     \
-8.0 |      * (NF4 QLoRA r=16, Step 0: 7.82)
-7.5 |        \    \
-7.0 |         \    \   M-2LRF (r=16)
-6.5 |          \    \--------------------- Loss: 1.48 (Step 1000)
-6.0 |           \    \
-1.5 |            \    *------------------- M-2LRF (r=64) Loss: 1.24 (Step 1000)
-1.2 |             *----------------------- NF4 QLoRA (r=16) Loss: 1.22 (Step 1000)
-1.0 +---------------------------------------------------------------------------->
-    0           100         500         1000        1500        2000    Steps
-```
+As empirically measured in our hyperparameter sweeps (`benchmarks/hyperparameter_sweeps.json`):
+- **Rank $r=4$:** Trainable parameter fraction $0.39\%$, Step-0 SQNR $9.64\text{ dB}$
+- **Rank $r=8$:** Trainable parameter fraction $0.78\%$, Step-0 SQNR $9.68\text{ dB}$
+- **Rank $r=16$:** Trainable parameter fraction $1.56\%$, Step-0 SQNR $9.77\text{ dB}$
+- **Rank $r=32$:** Trainable parameter fraction $3.13\%$, Step-0 SQNR $9.91\text{ dB}$
+- **Rank $r=64$:** Trainable parameter fraction $6.25\%$, Step-0 SQNR $10.15\text{ dB}$
 
-#### Detailed Empirical Regimes:
-
-1. **Early Horizon ($\text{steps} \in [0, 100]$):**  
-   NF4 exhibits superior initial convergence due to its 16-centroid codebook preserving $99.05\%$ of baseline parameter variance. At step 40, NF4 achieves lower loss ($\Delta \mathcal{L} \approx -0.42$ relative to M-2LRF $r=16$).
-2. **Intermediate Horizon ($\text{steps} \in [100, 500]$):**  
-   As backpropagation accumulates gradient signal into adapter matrices $\mathbf{B}$ and $\mathbf{A}$, increasing rank from $r=16$ to $r=32$ or $r=64$ provides the parameter capacity necessary to simultaneously learn downstream task features and reconstruct the static 2-bit quantization residual.
-3. **Extended Horizon ($\text{steps} \ge 500 - 2000$):**  
-   With $r=64$ and SVD residual initialization, M-2LRF closes the convergence gap asymptotically:
-   $$\lim_{t \to \infty} |\mathcal{L}_{\text{M-2LRF}}^{(r=64)}(t) - \mathcal{L}_{\text{NF4}}^{(r=16)}(t)| \le 0.020$$
-   On downstream evaluation benchmarks (MMLU 5-shot accuracy and GSM8K 8-shot pass@1), M-2LRF ($r=64$) reaches within **$0.4\% - 0.8\%$** of full NF4 QLoRA accuracy while consuming **$50\%$ less static weight VRAM**.
+By absorbing the principal directional error into $\mathbf{B}_{\text{init}} \mathbf{A}_{\text{init}}$, SVD residual initialization drives Step-0 representation fidelity past $10\text{ dB}$ SQNR, preventing the loss spikes and training instability characteristic of zero-initialized 2-bit adapters.
 
 ## 8.5 Comprehensive 8-Way Empirical Ablation Study & Architectural Unification
 
@@ -667,24 +635,27 @@ We evaluated the architectural scalability of M-2LRF on modern open-weight LLMs 
 - **LoRA Rank ($r$):** Truncated SVD residual initialization scales from $9.64\text{ dB}$ ($r=4$) to $9.91\text{ dB}$ ($r=32$) and $10.15\text{ dB}$ ($r=64$), preserving semantic representation at Step 0.
 
 
-## 8.8 Downstream Task Perplexity & Accuracy Telemetry
+## 8.8 Downstream Language Modeling & Weight Merge Telemetry
 
-To ensure that quantization gains translate directly to language understanding, we benchmarked WikiText-2 validation perplexity and zero-shot reasoning benchmarks:
+To rigorously quantify the impact of 2-bit quantization on language modeling fidelity, we measured validation perplexity (PPL) on the WikiText-2 validation set across 4 model configurations on GPT-2 (124M), alongside in-situ weight merge precision loss:
 
-#### Table 8.8: Downstream Perplexity and Multi-Benchmark Accuracy
+#### Table 8.8: Downstream WikiText-2 Validation Perplexity and Merge Fidelity
 
-| Model / Configuration | WikiText-2 PPL | GSM8K (8-shot CoT) | ARC-Challenge | HellaSwag |
-|---|---|---|---|---|
-| **FP16 Base Model** | 181.66 | 34.8% | 42.6% | 51.2% |
-| **BitsAndBytes NF4 QLoRA** | 204.15 | 34.2% | 42.1% | 50.8% |
-| **M-2LRF 2-Bit Baseline (Unrotated, $r=0$)** | 9,635.00 | 21.4% | 31.0% | 38.6% |
-| **M-2LRF Unified (FWHT + $G=64$ + LoftQ $r=32$)** | **904.39** | 32.9% | 41.3% | 49.8% |
-| **M-2LRF Mixed 2/4-Bit Allocation (2.60 bpp)** | 1,685.85 | **34.1%** | **42.0%** | **50.7%** |
+| Model / Configuration | Effective Bitrate | WikiText-2 PPL | PPL Relative vs 2-Bit Base | Status |
+|---|:---:|:---:|:---:|:---|
+| **FP16 Base Model** | 16.00 bpp | 181.66 | Reference | Baseline |
+| **M-2LRF 2-Bit Baseline (Unrotated, $r=0$)** | 2.00 bpp | 9,635.00 | $1.00\times$ | Severe degradation |
+| **M-2LRF Mixed 2/4-Bit Allocation** | 2.625 bpp | 1,183.68 | $8.14\times$ lower PPL | High-sensitivity protection |
+| **M-2LRF Unified (FWHT + $G=64$ + LoftQ $r=32$)** | **2.28 bpp** | **1,018.51** | **$9.46\times$ lower PPL!** | Robust representation recovery |
 
-*Key Findings:*
-1. **Perplexity Collapse Prevention:** The combination of FWHT pre-rotation and LoftQ SVD initialization drops 2-bit perplexity by **10.65x** ($9,635.00 \to 904.39$), preventing representation collapse.
-2. **Downstream Accuracy Parity:** At an effective bitrate of $2.60\text{ bpp}$, M-2LRF matches 4-bit NF4 QLoRA to within $0.1\%$ on GSM8K ($34.1\%$ vs $34.2\%$) and ARC-Challenge ($42.0\%$ vs $42.1\%$).
-3. **In-Situ Weight Merge Precision:** Collapsing trained LoRA parameters permanently into 2-bit base weights incurs a mean relative Frobenius error of only $14.44\%$, providing a zero-latency inference artifact.
+#### In-Situ Permanent Weight Merge Precision:
+When permanently collapsing trained LoRA adapters into base 2-bit dual-basis weights ($\tilde{W} \leftarrow W + rac{lpha}{r} B A$) across all 48 projection layers:
+- **Mean Relative Frobenius Error:** $14.44\%$
+- **Max Relative Frobenius Error:** $23.96\%$
+- **Runtime Cost:** Zero auxiliary inference latency; permanently eliminates LoRA branch computation.
+
+> [!NOTE]
+> Complex reasoning benchmarks (GSM8K, ARC-Challenge, MMLU) require instruction-tuned models with $\ge 7\text{B}$ parameters. On small 124M base models, zero-shot math and reasoning accuracy is near $0\%$. Full reasoning benchmark evaluation for M-2LRF on Qwen2.5-7B/LLaMA-3.1-8B via `lm-evaluation-harness` is designated for dedicated GPU cluster execution.
 
 ---
 
@@ -723,7 +694,7 @@ To transition M-2LRF from an experimental 2-bit quantization primitive to an ind
 |   [ PILLAR 1: Group-Wise Scaling ]      [ PILLAR 2: SVD Residual Adaptation ]                   |
 |   - Block size G = 64 / 128             - Truncated SVD initialization                          |
 |   - Isolates channel kurtosis           - Iterative K-step alternating projection               |
-|   - Lifts SQNR: 9.30 dB -> 11.85 dB     - Reduces Step-0 error from 11.7% to < 3.5%             |
+|   - Reduces channel heteroscedasticity (+0.71 to +1.15 dB)     - Reduces Step-0 error from 11.7% to < 3.5%             |
 |                                                                                                 |
 |                                            |                                                    |
 |                                            v                                                    |
@@ -731,7 +702,7 @@ To transition M-2LRF from an experimental 2-bit quantization primitive to an ind
 |   [ PILLAR 3: In-SRAM Fused GEMM ]      [ PILLAR 4: Hierarchical Double Quant ]                 |
 |   - Register-level 2-bit unpack         - 8-bit scale compression (G2 = 256)                    |
 |   - Zero global VRAM roundtrips         - Caps scale overhead at <= 0.064 bpp                   |
-|   - 1.35x - 1.64x speedup over NF4      - Locks net storage at 2.064 bpp                        |
+|   - 1.63x speedup over NF4 (Tesla T4)      - Locks net storage at 2.064 bpp                        |
 |                                                                                                 |
 +-------------------------------------------------------------------------------------------------+
 ```
@@ -739,7 +710,7 @@ To transition M-2LRF from an experimental 2-bit quantization primitive to an ind
 ### 9.4.1 Pillar 1: Outlier-Aware Fine-Grained Group Scaling ($G=64, 128$)
 - **Objective:** Mitigate inter-channel variance heteroscedasticity and heavy-tailed kurtosis in massive weight matrices ($d_{\text{model}} \ge 4096$).
 - **Mechanism:** Partitioning weight rows into sub-vectors of $G \in \{64, 128\}$ elements isolates cross-layer activation outlier projections to localized blocks. 
-- **Target Impact:** Elevates the baseline Gaussian SQNR from $9.3009\text{ dB}$ to **$11.8504\text{ dB}$**, eliminating catastrophic loss spikes on sensitive attention projection matrices (`q_proj`, `k_proj`, `v_proj`).
+- **Target Impact:** Reduces local reconstruction error by $+0.71\text{ dB}$ to $+1.15\text{ dB}$ across real projection layers, eliminating catastrophic loss spikes on sensitive attention projection matrices (`q_proj`, `k_proj`, `v_proj`).
 
 ### 9.4.2 Pillar 2: Multi-Rate SVD Residual Adaptation & Alternating Optimization (LoftQ / PiSSA)
 - **Objective:** Eliminate the initial representation gap at step 0 without requiring expensive pre-training compute.
