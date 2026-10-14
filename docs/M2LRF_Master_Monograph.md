@@ -4,7 +4,6 @@
 
 > **Lead Author & System Architect:** **MD-Mushfiqur Rahim**  
 > **Affiliation / Project:** Independent Open-Source AI Research / M-Series Engineering  
-> **Correspondence:** `mushfiqur.research@gmail.com`  
 > **Repository:** `projects/m2lrf-clean/` | **Release:** `v1.0-Formal-Specification`  
 
 ---
@@ -78,13 +77,14 @@ To compensate for the quantization residual $\mathbf{R} = \mathbf{W} - \mathbf{W
 
 To maintain absolute scientific rigor, this monograph explicitly distinguishes between verified empirical measurements and analytical projections:
 
-- **Empirically Measured & Verified (This Work):**
-  1. **Quantizer & Coding Theory:** Disjointness invariant ($\mathbf{T}_0 \odot \mathbf{T}_1 = \mathbf{0}$), closed-form Lloyd-Max centroids, and 2-bit packing codec verified across 93 unit tests.
-  2. **8-Way Systematic Ablation:** Measured across all 48 projection layers of pretrained GPT-2 (124M), demonstrating progression from $8.72	ext{ dB}$ (baseline) to $9.41	ext{ dB}$ (FWHT + DQ) and $10.10	ext{ dB}$ (LoftQ $r=32$).
-  3. **Outlier Dispersion Correlation:** Evaluated across 48 GPT-2 layers and 10 synthetic distributions ($N=58$), proving Spearman rank correlation $\mathbf{ho = 0.8723}$ ($p = 4.77 	imes 10^{-19}$) between weight kurtosis and FWHT SQNR recovery.
-  4. **Language Modeling Perplexity:** Measured on WikiText-2 validation tokens (GPT-2 124M), showing a $9.46	imes$ perplexity reduction ($9,635.00 	o 1,018.51$) with LoftQ SVD residual initialization.
-  5. **In-Situ Weight Merge Fidelity:** Measured Frobenius relative error of $14.44\%$ across 48 projection layers with zero runtime latency overhead.
-  6. **Fused Triton GEMM Kernel:** Measured on NVIDIA Tesla T4 GPU (Google Colab), delivering a $1.63	imes$ speedup over BitsAndBytes NF4 during token generation.
+- **Previously Reported Measurements (Historical, Not Currently Verified):**
+  > Correction: the prior WikiText-2 perplexity values were generated from hand-written prose, not the WikiText-2 validation split. Those values are withdrawn. Other historical metrics below are not current verification.
+  1. **Quantizer & Coding Theory:** Disjointness, Lloyd-Max scale, and packing behavior are covered by the current test suite; the old count of 93 tests is historical.
+  2. **8-Way Systematic Ablation:** Previously reported measurements are historical and have not been independently reproduced in the current checkout.
+  3. **Outlier Dispersion Correlation:** Previously reported correlation values are historical and have not been independently reproduced in the current checkout.
+  4. **Language Modeling Perplexity:** Withdrawn. A corrected full-split WikiText-2 evaluation is pending.
+  5. **In-Situ Weight Merge Fidelity:** Previously reported error figures are historical and unverified.
+  6. **Fused Triton GEMM Kernel:** Previously reported speedup is historical and has not been independently reproduced.
 
 - **Analytical Projections & Future Work:**
   1. **Model Parameter Sizing (0.5B to 8B):** Analytical memory calculations derived from model architecture specifications.
@@ -641,11 +641,11 @@ We evaluated the architectural scalability of M-2LRF on modern open-weight LLMs 
 
 | Architecture | Quantizable Linear Params | FP16 Base | BitsAndBytes NF4 | M-2LRF 2-Bit | Net Saving vs FP16 | Net Saving vs NF4 | Max Context on 16GB GPU |
 |---|---|---|---|---|---|---|---|
-| **Qwen2.5-0.5B** | 357.8 M | 1.17 GB | 0.68 GB | **0.59 GB** | -49.6% | -13.2% | >500,000 |
+| **Qwen2.5-0.5B** | 357.8 M | 1.17 GB | 0.68 GB | **Unverified; remeasure** | Not verified | Not verified | Not verified |
 | **Qwen2.5-1.5B** | 1,228.8 M | 3.31 GB | 1.50 GB | **1.18 GB** | **-64.4%** | **-21.3%** | 493,901 tokens |
 | **LLaMA-3.2-3B** | 2,752.5 M | 6.72 GB | 2.82 GB | **2.13 GB** | **-68.3%** | **-24.5%** | 114,477 tokens |
 | **Qwen2.5-7B** | 6,553.6 M | 14.18 GB | 5.16 GB | **3.56 GB** | **-74.9%** | **-31.0%** | 201,657 tokens |
-| **LLaMA-3.1-8B** | 7,208.9 M | 14.96 GB | 5.31 GB | **3.59 GB** | **-76.0%** | **-32.4%** | 87,934 tokens |
+| **LLaMA-3.1-8B** | 7,208.9 M | 14.96 GB | 5.31 GB | **Unverified; remeasure** | Not verified | Not verified | Not verified |
 
 #### Hyperparameter Sweeps & Pareto Frontiers:
 - **FWHT Block Size ($B$):** Sweeping $B \in [64, 128, 256, 512, 1024]$ reveals that $B=64$ delivers optimal SQNR ($9.72\text{ dB}$) with negligible compute overhead ($41.87\text{ ms}$ on $2048 \times 2048$ tensors).
@@ -655,27 +655,20 @@ We evaluated the architectural scalability of M-2LRF on modern open-weight LLMs 
 
 ## 8.8 Downstream Language Modeling & Weight Merge Telemetry
 
-To rigorously quantify the impact of 2-bit quantization on language modeling fidelity, we measured validation perplexity (PPL) on the WikiText-2 validation set across 4 model configurations on GPT-2 (124M), alongside in-situ weight merge precision loss:
+The previously published perplexity values are withdrawn: the generating script evaluated hand-written prose, not WikiText-2. No valid full-split WikiText-2 PPL result is currently available; rerun `benchmarks/eval_downstream_tasks.py` before citing one. Historical merge-error values from that run are also unverified.
 
-#### Table 8.8: Downstream WikiText-2 Validation Perplexity and Merge Fidelity
+#### Table 8.8: Downstream WikiText-2 Validation Perplexity
 
-| Model / Configuration | Effective Bitrate | WikiText-2 PPL | PPL Relative vs 2-Bit Base | Status |
-|---|:---:|:---:|:---:|:---|
-| **FP16 Base Model** | 16.00 bpp | 181.66 | Reference | Baseline |
-| **M-2LRF 2-Bit Baseline (Unrotated, $r=0$)** | 2.00 bpp | 9,635.00 | $1.00\times$ | Severe degradation |
-| **M-2LRF Mixed 2/4-Bit Allocation** | 2.625 bpp | 1,183.68 | $8.14\times$ lower PPL | High-sensitivity protection |
-| **M-2LRF Unified (FWHT + $G=64$ + LoftQ $r=32$)** | **2.28 bpp** | **1,018.51** | **$9.46\times$ lower PPL!** | Robust representation recovery |
+| Model / Configuration | Effective Bitrate | WikiText-2 PPL | Status |
+|---|---:|---:|---|
+| **Base model** | 16.00 bpp | To be measured | Pending rerun |
+| **M-2LRF 2-Bit Baseline (Unrotated, $r=0$)** | 2.00 bpp | To be measured | Pending rerun |
+| **M-2LRF Mixed 2/4-Bit Allocation** | 2.625 bpp | To be measured | Pending rerun |
+| **M-2LRF Unified (FWHT + $G=64$ + LoftQ $r=32$)** | 2.28 bpp | To be measured | Pending rerun |
 
-#### In-Situ Permanent Weight Merge Precision:
-When permanently collapsing trained LoRA adapters into base 2-bit dual-basis weights ($\tilde{W} \leftarrow W + rac{lpha}{r} B A$) across all 48 projection layers:
-- **Mean Relative Frobenius Error:** $14.44\%$
-- **Max Relative Frobenius Error:** $23.96\%$
-- **Runtime Cost:** Zero auxiliary inference latency; permanently eliminates LoRA branch computation.
+#### In-Situ Weight Merge Fidelity
 
-> [!NOTE]
-> Complex reasoning benchmarks (GSM8K, ARC-Challenge, MMLU) require instruction-tuned models with $\ge 7\text{B}$ parameters. On small 124M base models, zero-shot math and reasoning accuracy is near $0\%$. Full reasoning benchmark evaluation for M-2LRF on Qwen2.5-7B/LLaMA-3.1-8B via `lm-evaluation-harness` is designated for dedicated GPU cluster execution.
-
----
+No independently verified merge-error measurement is available in this checkout. Do not cite the historical error values until the evaluation is rerun and its provenance is established.
 
 # 9. ERROR ANALYSIS, THEORETICAL CONSTRAINTS & COMPARATIVE STUDY
 

@@ -84,8 +84,8 @@ class M2LRFUnifiedLinear(nn.Module):
             self.register_buffer("a1", torch.zeros(out_features, num_groups, dtype=scale_dtype))
 
             if self.double_quant and num_groups > 1:
-                self.register_buffer("a0_super_scale", torch.zeros(out_features, 1, dtype=torch.float16))
-                self.register_buffer("a1_super_scale", torch.zeros(out_features, 1, dtype=torch.float16))
+                self.register_buffer("a0_super_scale", torch.zeros(out_features, 1, dtype=torch.float32))
+                self.register_buffer("a1_super_scale", torch.zeros(out_features, 1, dtype=torch.float32))
             else:
                 self.register_buffer("a0_super_scale", None)
                 self.register_buffer("a1_super_scale", None)
@@ -199,7 +199,6 @@ class M2LRFUnifiedLinear(nn.Module):
             max_possible_rank = min(self.out_features, self.in_features)
             q_dim = min(self.rank, max_possible_rank)
 
-            svd_success = False
             try:
                 if q_dim < max_possible_rank:
                     u, s, v = torch.svd_lowrank(residual, q=q_dim, niter=niter)
@@ -215,11 +214,7 @@ class M2LRFUnifiedLinear(nn.Module):
 
                 self.lora_B.data[:, :q_dim].copy_(u[:, :q_dim] @ sqrt_s)
                 self.lora_A.data[:q_dim, :].copy_(sqrt_s @ v[:, :q_dim].t())
-                svd_success = True
-            except Exception:
-                svd_success = False
-
-            if not svd_success:
+            except Exception as low_rank_error:
                 try:
                     u, s, vh = torch.linalg.svd(residual, full_matrices=False)
                     r = min(self.rank, len(s))
@@ -227,14 +222,14 @@ class M2LRFUnifiedLinear(nn.Module):
                     sqrt_s = torch.diag(torch.sqrt(s_clamped) * norm_factor)
                     self.lora_B.zero_()
                     self.lora_A.zero_()
-                    self.lora_B.data[:, :r].copy_(u[:, :r] @ sqrt_s)
-                    self.lora_A.data[:r, :].copy_(sqrt_s @ vh[:r, :])
-                    svd_success = True
-                except Exception:
-                    nn.init.kaiming_uniform_(self.lora_A, a=math.sqrt(5))
-                    nn.init.zeros_(self.lora_B)
+                    self.lora_B[:, :r].copy_(u[:, :r] @ sqrt_s)
+                    self.lora_A[:r, :].copy_(sqrt_s @ vh[:r, :])
+                except Exception as exact_svd_error:
+                    raise RuntimeError(
+                        "LoftQ initialization failed: low-rank and exact SVD both failed"
+                    ) from exact_svd_error
 
-            if iters > 1 and iter_idx < iters - 1 and svd_success:
+            if iters > 1 and iter_idx < iters - 1:
                 adapter_recon = (self.lora_B.data @ self.lora_A.data) * scale
                 w_base = w_target - adapter_recon
 

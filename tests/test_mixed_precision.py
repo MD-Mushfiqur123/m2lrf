@@ -15,6 +15,7 @@ import math
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from unittest.mock import patch
 
 from m2lrf.quantizer import DualBasisQuantizer
 from m2lrf.layer import M2LRF2BitLinear
@@ -93,6 +94,13 @@ class TestM2LRF4BitLinear(unittest.TestCase):
         x = torch.randn(4, 8, in_f, device=self.device)
         out = layer(x)
         self.assertEqual(out.shape, (4, 8, out_f))
+
+    def test_loftq_svd_failure_is_reported(self):
+        layer = M2LRF4BitLinear(4, 4, rank=2)
+        with patch("torch.svd_lowrank", side_effect=RuntimeError("low-rank failure")):
+            with patch("torch.linalg.svd", side_effect=RuntimeError("exact failure")):
+                with self.assertRaisesRegex(RuntimeError, "both failed"):
+                    layer.initialize_from_pretrained(torch.randn(4, 4))
 
     def test_gradient_flow(self):
         """Verify base 4-bit weights are frozen and only LoRA adapter gets gradients."""

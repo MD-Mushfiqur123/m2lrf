@@ -11,7 +11,7 @@ Bit alphabet mapping:
 Supports:
   1. Standard per-row 2-bit packing (87.5% memory reduction)
   2. Group-wise 2-bit packing (group_size e.g. 64, 128 for 11.5+ dB SQNR)
-  3. 8-Bit Double Quantization (DQ) of scale vectors (50% scale memory reduction)
+  3. 8-Bit Double Quantization (DQ) of scale vectors (about 47% scale memory reduction)
   4. Outlier-Aware Quantization & Sparse Outlier Buffer preservation
 """
 
@@ -159,7 +159,10 @@ class Real2BitCodec:
 
         if outlier_clip_sigma is not None or extract_sparse_outliers:
             sigma_thresh = outlier_threshold_sigma if outlier_threshold_sigma is not None else 3.5
-            std_row = torch.std(w_f, dim=-1, keepdim=True).clamp(min=1e-8)
+            std_row = torch.std(
+                w_f, dim=-1, keepdim=True,
+                correction=1 if in_features > 1 else 0
+            ).clamp(min=1e-8)
             outlier_boundary = std_row * sigma_thresh
 
             if extract_sparse_outliers:
@@ -181,7 +184,25 @@ class Real2BitCodec:
                 w_padded = w_working
 
             w_grouped = w_padded.view(*batch_dims, num_groups, group_size)
-            std = torch.std(w_grouped, dim=-1, keepdim=True).clamp(min=1e-8)
+            valid_counts = torch.clamp(
+                in_features - torch.arange(num_groups, device=w.device) * group_size,
+                min=0,
+                max=group_size
+            ).to(w_grouped.dtype)
+            valid_mask = (
+                torch.arange(group_size, device=w.device).unsqueeze(0)
+                < valid_counts.unsqueeze(1)
+            ).to(w_grouped.dtype)
+            valid_mask = valid_mask.view(
+                *((1,) * len(batch_dims)), num_groups, group_size
+            )
+            counts = valid_mask.sum(dim=-1, keepdim=True).clamp(min=1)
+            means = (w_grouped * valid_mask).sum(dim=-1, keepdim=True) / counts
+            squared_deviations = ((w_grouped - means) ** 2) * valid_mask
+            variance_denominator = (counts - 1).clamp(min=1)
+            std = torch.sqrt(
+                squared_deviations.sum(dim=-1, keepdim=True) / variance_denominator
+            ).clamp(min=1e-8)
 
             a0 = std * LLOYD_MAX_A0
             a1 = std * LLOYD_MAX_A1
@@ -218,7 +239,10 @@ class Real2BitCodec:
             a1_scales = a1.squeeze(-1)  # shape: [..., num_groups]
         else:
             # Standard Per-row scaling
-            std = torch.std(w_working, dim=-1, keepdim=True).clamp(min=1e-8)
+            std = torch.std(
+                w_working, dim=-1, keepdim=True,
+                correction=1 if in_features > 1 else 0
+            ).clamp(min=1e-8)
             a0 = std * LLOYD_MAX_A0
             a1 = std * LLOYD_MAX_A1
             thresh = (a0 + a1) / 2.0
@@ -309,8 +333,8 @@ class Real2BitCodec:
             a1: Scale tensor for high-energy basis (FP16 or uint8 if double-quantized)
             orig_shape: Target tensor shape
             group_size: Group size used during packing (e.g. 64 or 128)
-            a0_super_scale: FP16 super-scale tensor for a0 if double-quantized
-            a1_super_scale: FP16 super-scale tensor for a1 if double-quantized
+            a0_super_scale: FP32 super-scale tensor for a0 if double-quantized
+            a1_super_scale: FP32 super-scale tensor for a1 if double-quantized
             sparse_outliers: Optional SparseOutlierBuffer or sparse tensor to apply
             dtype: Output floating-point dtype (default: torch.float16)
             
@@ -373,4 +397,3 @@ class Real2BitCodec:
     ) -> torch.Tensor:
         """Convenience helper to unpack a Packed2BitTensor instance."""
         return packed_tensor.dequantize(dtype=dtype)
-

@@ -18,7 +18,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from m2lrf.quantizer import DualBasisQuantizer
+from m2lrf.quantizer import DualBasisQuantizer, DoubleQuantizer, LLOYD_MAX_A0
 from m2lrf.packed_codec import Real2BitCodec
 from m2lrf.layer import M2LRF2BitLinear
 
@@ -182,7 +182,7 @@ class TestM2LRFCore(unittest.TestCase):
 
 
     def test_double_quantization_scales(self):
-        """Verify 8-bit Double Quantization (DQ) achieves 50% scale memory reduction with high fidelity."""
+        """Verify 8-bit DQ gives roughly 47% scale memory reduction with high fidelity."""
         from m2lrf.quantizer import DoubleQuantizer
         
         # Simulate FP16 scales for 128 output channels and 64 groups
@@ -191,19 +191,58 @@ class TestM2LRFCore(unittest.TestCase):
         
         # Verify uint8 dtype
         self.assertEqual(q_scales.dtype, torch.uint8)
-        self.assertEqual(super_scale.dtype, torch.float16)
+        self.assertEqual(super_scale.dtype, torch.float32)
         self.assertEqual(super_scale.shape, (128, 1))
         
         # Verify memory reduction: uint8 is 1 byte vs FP16 is 2 bytes (50% reduction)
         fp16_scale_bytes = scales.numel() * scales.element_size()  # 128 * 64 * 2 = 16384 bytes
-        dq_scale_bytes = (q_scales.numel() * q_scales.element_size()) + (super_scale.numel() * super_scale.element_size())  # 8192 + 256 = 8448 bytes
+        dq_scale_bytes = (q_scales.numel() * q_scales.element_size()) + (super_scale.numel() * super_scale.element_size())
         reduction = (1.0 - (dq_scale_bytes / fp16_scale_bytes)) * 100.0
-        self.assertGreater(reduction, 48.0, f"Scale memory reduction {reduction:.1f}% was below 48% target")
+        self.assertGreater(reduction, 46.0, f"Scale memory reduction {reduction:.1f}% was below 46% target")
         
         # Verify reconstruction fidelity
         scales_recon = DoubleQuantizer.dequantize(q_scales, super_scale)
         rel_error = (torch.norm(scales.float() - scales_recon.float()) / torch.norm(scales.float())).item()
         self.assertLess(rel_error, 0.01, f"Double quantization relative error {rel_error:.4f} exceeded 1%")
+
+    def test_double_quantization_preserves_small_scales(self):
+        scales = torch.tensor([[1e-6, 5e-7, 2.5e-7]], dtype=torch.float32, device=self.device)
+
+        quantized, super_scale = DoubleQuantizer.quantize(scales)
+        reconstructed = DoubleQuantizer.dequantize(
+            quantized, super_scale, dtype=torch.float32
+        )
+
+        self.assertEqual(super_scale.dtype, torch.float32)
+        self.assertGreater(super_scale.min().item(), 0.0)
+        self.assertTrue(torch.isfinite(reconstructed).all())
+        self.assertTrue(torch.allclose(reconstructed, scales, rtol=0.01, atol=1e-9))
+        reconstructed_fp16 = DoubleQuantizer.dequantize(quantized, super_scale)
+        self.assertTrue(torch.isfinite(reconstructed_fp16).all())
+        self.assertGreater(reconstructed_fp16.max().item(), 0.0)
+
+    def test_singleton_and_partial_groups_have_finite_scales(self):
+        singleton = torch.tensor([[2.0], [-3.0]], device=self.device)
+        _, _, a0_single, a1_single, base_single = DualBasisQuantizer.quantize_2_00b(
+            singleton, group_size=1
+        )
+        self.assertTrue(torch.isfinite(a0_single).all())
+        self.assertTrue(torch.isfinite(a1_single).all())
+        self.assertTrue(torch.isfinite(base_single).all())
+
+        values = torch.tensor([[0.0, 0.0, 1.0, 1.0, 1.0, 3.0, 100.0]], device=self.device)
+        _, _, a0, _, _ = DualBasisQuantizer.quantize_2_00b(values, group_size=4)
+        expected_last_scale = (
+            torch.std(torch.tensor([1.0, 3.0, 100.0], device=self.device))
+            * LLOYD_MAX_A0
+        ).view(1, 1)
+        self.assertTrue(torch.allclose(a0[..., -1:, :], expected_last_scale, rtol=1e-5))
+
+        packed = Real2BitCodec.pack(values, group_size=4)
+        self.assertTrue(torch.isfinite(packed.a0).all())
+        self.assertTrue(torch.allclose(
+            packed.a0[..., -1:].float(), expected_last_scale, rtol=1e-3
+        ))
 
     def test_outlier_aware_quantization_and_sparse_buffer(self):
         """Verify Outlier-Aware Quantization detects outliers (> 3.5 sigma) and preserves them in sparse buffer."""
@@ -546,5 +585,3 @@ class TestFullModelConversionAndMultiTaskEval(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-
-

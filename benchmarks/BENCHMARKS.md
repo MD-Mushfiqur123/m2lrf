@@ -1,9 +1,11 @@
 # M-2LRF Empirical Benchmark Suite & Telemetry Hub
 
 > **Project:** Multi-Rate Low-Rank Factorization & Dual-Basis 2-Bit Quantization (M-2LRF)  
-> **Author & Lead Maintainer:** MD-Mushfiqur Rahim (`mushfiqur.research@gmail.com`)  
+> **Author & Lead Maintainer:** MD-Mushfiqur Rahim
 > **Repository:** `https://github.com/MD-Mushfiqur123/m2lrf`  
-> **Status:** Fully Empirically Verified & Replicable (93/93 Unit Tests Passing)
+> **Status:** Historical benchmark metrics are not independently verified. Current code tests: 193 passed, 0 failed on Python 3.12.10 (2026-10-14), with one PyTorch sparse-tensor warning.
+>
+> **Perplexity correction:** The prior `eval_downstream_tasks.py` scored eight hand-written strings, not WikiText-2. Its recorded PPL values are invalid as WikiText-2 results. The script now evaluates the WikiText-2 validation split; rerun it before publishing PPL numbers.
 
 ---
 
@@ -12,10 +14,10 @@
 This document provides a comprehensive, high-density reference for all empirical benchmarks, hardware profiling, and downstream evaluation metrics for **M-2LRF**. 
 
 Across all experiments, M-2LRF achieves:
-1. **Up to 76.0% net VRAM reduction** on foundation LLM weights compared to 16-bit baselines, and **up to 32.4% net VRAM reduction** compared to 4-bit NF4 QLoRA.
-2. **10.6x perplexity reduction** over unrotated 2-bit baselines via Fast Walsh-Hadamard Transform (FWHT) outlier suppression and LoftQ SVD residual initialization.
-3. **Statistically decisive proof** of outlier suppression: Spearman rank correlation $\mathbf{\rho = 0.8723}$ ($p = 4.77 \times 10^{-19}$) between weight kurtosis and Hadamard SQNR gain.
-4. **Language Modeling Preservation:** Reconstructed 2-bit unified model achieves a validation perplexity of **904.39** on WikiText-2 (a 10.65x drop from 9,635.00 for the unrotated 2-bit baseline), while permanent in-situ weight merging incurs only 14.44% mean relative error with zero runtime latency overhead.
+1. **Historical memory projections:** Previous architecture calculations reported up to 76.0% net VRAM reduction vs. 16-bit and 32.4% vs. NF4; these figures are estimates, not independently reproduced measurements.
+2. **WikiText-2 perplexity:** No valid measurement is available; the previous hand-written-text result is withdrawn pending a full-split rerun.
+3. **Historical outlier-suppression analysis:** Previous artifacts reported Spearman rank correlation $\mathbf{\rho = 0.8723}$ ($p = 4.77 \times 10^{-19}$); this result has not been independently reproduced in the current checkout.
+4. **Language Modeling Preservation:** No valid WikiText-2 PPL result is currently available from this checkout. Historical values were generated from hand-written strings and are withdrawn pending a rerun.
 
 ---
 
@@ -66,14 +68,15 @@ Evaluation across 48 real transformer layers and 10 controlled synthetic heavy-t
 ## 🏗️ 3. Foundation Model Scaling Matrix (0.5B to 8B)
 
 Calculated across full transformer architectures comparing FP16 baselines, BitsAndBytes 4-bit NF4, and M-2LRF 2-Bit base weight allocations:
+> All M-2LRF memory figures and context projections in this historical table are analytical estimates, not measured runtime results. Conflicting Qwen2.5-0.5B and LLaMA-3.1-8B values have been marked unverified.
 
 | Model Architecture | Quantizable Linear Params | FP16 Base VRAM | NF4 4-Bit VRAM | M-2LRF 2-Bit VRAM | Net VRAM Saving vs FP16 | Net VRAM Saving vs NF4 | Max Context on 16GB GPU |
 |---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| **Qwen2.5-0.5B** | 357.8 M | 1.17 GB | 0.68 GB | **0.59 GB** | -49.6% | -13.2% | >500,000 |
+| **Qwen2.5-0.5B** | 357.8 M | 1.17 GB | 0.68 GB | **Unverified; remeasure** | Not verified | Not verified | Not verified |
 | **Qwen2.5-1.5B** | 1,228.8 M | 3.31 GB | 1.50 GB | **1.18 GB** | **-64.4%** | **-21.3%** | 493,901 |
 | **LLaMA-3.2-3B** | 2,752.5 M | 6.72 GB | 2.82 GB | **2.13 GB** | **-68.3%** | **-24.5%** | 114,477 |
 | **Qwen2.5-7B** | 6,553.6 M | 14.18 GB | 5.16 GB | **3.56 GB** | **-74.9%** | **-31.0%** | 201,657 |
-| **LLaMA-3.1-8B** | 7,208.9 M | 14.96 GB | 5.31 GB | **3.59 GB** | **-76.0%** | **-32.4%** | 87,934 |
+| **LLaMA-3.1-8B** | 7,208.9 M | 14.96 GB | 5.31 GB | **Unverified; remeasure** | Not verified | Not verified | Not verified |
 
 ### Adapter & LoftQ SVD Overhead
 Adding trainable LoftQ low-rank adapters adds minimal memory footprint:
@@ -122,47 +125,25 @@ Matrix: $2048 \times 2048$, initial kurtosis $\kappa_0 = 122.54$:
 
 ## 🧪 5. Downstream Evaluation & Weight Merge Precision
 
-### A. Perplexity on WikiText-2 (Sliding Window, Window=512)
-Evaluated on GPT-2 with real autoregressive generation:
+### A. WikiText-2 Perplexity
+No valid result is available yet. The prior values are withdrawn because the generating script used eight hand-written prose strings rather than the WikiText-2 validation split. Install the optional dependency with `pip install -e ".[benchmarks]"`, then run `python benchmarks/eval_downstream_tasks.py` to produce a new full-split measurement.
 
-| Pipeline Configuration | Effective Bitrate | Perplexity (PPL) | Perplexity Relative vs Baseline |
+| Pipeline Configuration | Effective Bitrate | Perplexity (PPL) | Status |
 |---|:---:|:---:|:---:|
-| **FP16 Base Model** | 16.00 bpp | 181.66 | Reference |
-| **M-2LRF 2-Bit Baseline (Unrotated, $r=0$)** | 2.00 bpp | 9,635.00 | 1.00x (Severe degradation) |
-| **M-2LRF Unified (FWHT + $G=64$ + LoftQ $r=32$)** | **2.28 bpp** | **904.39** | **10.65x Perplexity Reduction!** |
-| **M-2LRF Mixed 2/4-Bit Sensitivity Allocation** | 2.625 bpp | 1,685.85 | 5.71x Perplexity Reduction |
+| **FP16 Base Model** | 16.00 bpp | To be measured | Pending rerun |
+| **M-2LRF 2-Bit Baseline (Unrotated, $r=0$)** | 2.00 bpp | To be measured | Pending rerun |
+| **M-2LRF Unified (FWHT + $G=64$ + LoftQ $r=32$)** | **2.28 bpp** | To be measured | Pending rerun |
+| **M-2LRF Mixed 2/4-Bit Sensitivity Allocation** | 2.625 bpp | To be measured | Pending rerun |
 
 ### B. Downstream Reasoning Scope & Hardware Boundaries
 > [!NOTE]
 > High-level multi-step reasoning benchmarks (such as GSM8K, ARC-Challenge, MMLU, and HumanEval) require instruction-tuned foundation models of at least 7B to 70B parameters. A 124M base model like GPT-2 does not possess zero-shot chain-of-thought capabilities (scoring ~0% on GSM8K). Consequently, downstream evaluations on 124M are restricted to language modeling perplexity (WikiText-2) and layer-wise weight merge error. Full GSM8K and reasoning evaluations for M-2LRF on 7B+ models via `lm-evaluation-harness` are designated for dedicated multi-GPU cluster execution.
 
 ### C. In-Situ Weight Merge Precision Loss
-When permanently collapsing LoRA adapters into base dual-basis weights ($\tilde{W} \leftarrow W + \frac{\alpha}{r} B A$) across all 48 projection layers:
-- **Mean Relative Error:** $14.44\%$
-- **Max Relative Error:** $23.95\%$
-- **Reversible:** Zero runtime overhead during permanent deployment; supports multi-cycle merge/unmerge with $<0.05\%$ cumulative Frobenius drift.
+Historical merge-error figures from the invalidated evaluation run are not independently verified and must not be cited as measured results. Re-run the merge evaluation with recorded inputs and outputs before publishing fidelity or latency claims.
 
-### D. Empirical WikiText-2 PPL Gap Closing Ablation Matrix
-Evaluated on pretrained GPT-2 (124M) against WikiText-2 validation split (1024 tokens) across 40 fine-tuning steps using `benchmarks/m2lrf_vs_real_qlora_harness.py`:
-
-| Configuration | Parameters / Setup | Step-0 Loss | Val Loss | Val PPL ($e^{\mathcal{L}}$) | $\Delta$ PPL vs Base | Source Artifact | Verdict |
-|---|---|:---:|:---:|:---:|:---:|---|:---:|
-| **Real QLoRA Reference** | NF4 4-bit + Double Quant ($r=16$) | $3.2720$ | $3.2685$ | **$26.27$** | Reference | `m2lrf_vs_real_qlora_results.json` | Baseline Target |
-| **M-2LRF Baseline** | Uniform 2.0 bpp, $r=16$, LoftQ $K=1$, No FWHT | $7.2621$ | $7.1400$ | **$1,261.42$** | $\pm 0.00$ | `m2lrf_vs_real_qlora_results.json` | Starting Point |
-| **Ablation 1A (LoftQ $K=2$)** | Uniform 2.0 bpp, $r=16$, LoftQ $K=2$, No FWHT | $7.5552$ | $7.1382$ | **$1,259.12$** | $-2.30$ | `ablation_loftq_iter2.json` | Marginal ($-0.18\%$) |
-| **Ablation 1B (LoftQ $K=3$)** | Uniform 2.0 bpp, $r=16$, LoftQ $K=3$, No FWHT | $7.1860$ | $7.3677$ | **$1,584.00$** | **$+322.58$** | `ablation_loftq_iter3.json` | ⚠️ **Negative (Drift)** |
-| **Ablation 2 (FWHT Only)** | Uniform 2.0 bpp, $r=16$, LoftQ $K=1$, **FWHT $B=64$** | **$6.7298$** | $6.6106$ | **$742.92$** | **$-518.50$** | `ablation_fwht_hadamard.json` | 🏆 **Major Win ($-41.1\%$)** |
-| **Ablation 3A (Rank $r=32$)** | Uniform 2.0 bpp, **$r=32$**, LoftQ $K=1$, No FWHT | $7.1141$ | $7.1304$ | **$1,249.32$** | $-12.10$ | `ablation_rank32.json` | Modest ($-0.96\%$) |
-| **Ablation 3B (Rank $r=64$)** | Uniform 2.0 bpp, **$r=64$**, LoftQ $K=1$, No FWHT | **$6.7452$** | $6.5057$ | **$668.91$** | **$-592.51$** | `ablation_rank64.json` | 🏆 **Major Win ($-47.0\%$)** |
-| **Ablation 4 (Mixed 2.6 bpp)**| **Mixed 2.625 bpp**, $r=16$, LoftQ $K=1$, No FWHT | **$6.2770$** | $6.2637$ | **$525.17$** | **$-736.25$** | `ablation_mixed_26bpp.json` | 🏆 **Dominant Win ($-58.4\%$)** |
-| **Combo: FWHT + Rank 64** | Uniform 2.0 bpp, **$r=64$**, LoftQ $K=1$, **FWHT $B=64$** | **$5.7293$** | **$6.0643$** | **$\mathbf{430.24}$** | **$\mathbf{-831.18}$** | `ablation_fwht_plus_rank64.json` | 👑 **Champion 2-Bit ($-65.9\%$)** |
-| **Combo: Mixed + Rank 64** | Mixed 2.625 bpp, **$r=64$**, LoftQ $K=1$, No FWHT | **$5.6251$** | $8.5178$ | **$5,002.89$** | $+3,741.47$ | `ablation_mixed_26bpp_rank64.json` | ⚠️ **Unstable w/o FWHT** |
-
-#### Key Scientific Insights:
-1. **FWHT Outlier Dispersion is Vital for Stability:** Pure FWHT rotation drops perplexity by $-518.50$ ($1261.42 \to 742.92$) without adding any parameter overhead.
-2. **Rank Scaling ($r=64$) Provides Essential Bandwidth:** $r=64$ ($19.3\%$ parameters) drops perplexity by $-592.51$ ($1261.42 \to 668.91$).
-3. **Synergy of FWHT + Rank 64:** Combining FWHT rotation with Rank 64 yields the champion result, slashing perplexity from $1261.42$ down to **$430.24$** (a **$-65.9\%$** total drop).
-4. **Negative Result on High-Rank/Multi-Iteration Unrotated Weights:** Without FWHT rotation, high parameter flexibility ($K=3$ alternating SVD or $r=64$ mixed precision) overfits to unrotated outlier quantization noise, leading to gradient drift and validation divergence. FWHT rotation is mathematically indispensable before applying high-rank adapter adaptation.
+### D. Historical Controlled Ablation Artifacts
+The stored files under `benchmarks/ablation_*.json` are retained as historical records only. They use synthetic random token IDs for training, and their validation provenance and QLoRA same-run status are not established. No perplexity, comparative win, or scientific conclusion from these artifacts is currently verified. Re-run the corrected harness with real task data and an actually executed QLoRA trial before reporting comparative metrics.
 
 ---
 

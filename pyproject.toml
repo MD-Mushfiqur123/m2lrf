@@ -8,9 +8,6 @@ version = "2.0.0"
 description = "Enterprise 2-Bit Dual-Basis LLM Training & Quantization Engine (Unsloth + Axolotl Merged)"
 readme = "README.md"
 requires-python = ">=3.8"
-
-[project.scripts]
-m2lrf = "m2lrf.cli.main:main"
 license = { text = "MIT" }
 authors = [
     { name = "MD-Mushfiqur Rahim", email = "mushfiqur.research@gmail.com" }
@@ -56,6 +53,9 @@ dependencies = [
     "scipy>=1.10.0",
 ]
 
+[project.scripts]
+m2lrf = "m2lrf.cli.main:main"
+
 [project.optional-dependencies]
 triton = [
     "triton>=2.1.0; platform_system != 'Windows'",
@@ -68,6 +68,9 @@ peft = [
 ]
 reportlab = [
     "reportlab>=4.0.0",
+]
+benchmarks = [
+    "datasets>=2.14.0",
 ]
 matplotlib = [
     "matplotlib>=3.7.0",

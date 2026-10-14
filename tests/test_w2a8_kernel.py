@@ -23,6 +23,7 @@ import math
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from unittest.mock import patch
 
 from m2lrf.w2a8_kernel import (
     quantize_activations_dynamic_int8,
@@ -164,6 +165,13 @@ class TestM2LRFW2A8LinearLayer(unittest.TestCase):
 
         self.assertLess(rel_error, base_rel_error)
         self.assertLess(rel_error, 0.30, f"Step-0 relative error {rel_error:.4f} exceeded expected threshold")
+
+    def test_loftq_svd_failure_is_reported(self):
+        layer = M2LRFW2A8Linear(4, 4, rank=2)
+        with patch("torch.svd_lowrank", side_effect=RuntimeError("low-rank failure")):
+            with patch("torch.linalg.svd", side_effect=RuntimeError("exact failure")):
+                with self.assertRaisesRegex(RuntimeError, "both failed"):
+                    layer.initialize_from_pretrained(torch.randn(4, 4))
 
     def test_w2a8_training_gradient_flow(self):
         """
@@ -317,4 +325,3 @@ class TestM2LRFW2A8LinearLayer(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

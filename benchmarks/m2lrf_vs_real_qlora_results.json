@@ -1,6 +1,8 @@
 {
   "metadata": {
     "model_id": "gpt2",
+    "status": "historical; not independently verified",
+    "provenance_note": "Training used synthetic random token IDs. The stored QLoRA record may be a hardcoded reference from --skip-qlora and is not evidence of a same-run comparison.",
     "device": "cpu",
     "rank": 16,
     "alpha": 16.0,

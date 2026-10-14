@@ -1347,7 +1347,7 @@ $$\mathbf{W} \approx \underbrace{\alpha_0 \mathbf{T}_0 + \alpha_1 \mathbf{T}_1}_
 
 $$\text{subject to } \mathbf{T}_0 \odot \mathbf{T}_1 = \mathbf{0}, \quad \mathbf{T}_0, \mathbf{T}_1 \in \{-1, 0, +1\}^{d_{\text{out}} \times d_{\text{in}}}$$
 
-By initializing $\mathbf{B}$ and $\mathbf{A}$ using truncated SVD on the exact dual-basis quantization residual $\mathbf{R} = \mathbf{W}_0 - (\alpha_0 \mathbf{T}_0 + \alpha_1 \mathbf{T}_1)$, **Step-0 perplexity on WikiText-2 drops from 9,635.00 down to 1,018.51 (a 9.46× recovery)** on 2-bit GPT-2, proving that SVD residual compensation is essential for low-bit training.
+By initializing $\mathbf{B}$ and $\mathbf{A}$ using truncated SVD on the exact dual-basis quantization residual $\mathbf{R} = \mathbf{W}_0 - (\alpha_0 \mathbf{T}_0 + \alpha_1 \mathbf{T}_1)$, SVD residual compensation is intended to reduce quantization error. Previously cited GPT-2 perplexity numbers are withdrawn: they were computed on hand-written strings, not WikiText-2. A corrected evaluation must be run before making a language-modeling performance claim.
 
 ---
 
