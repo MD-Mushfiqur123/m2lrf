@@ -3,7 +3,9 @@
     "model_id": "gpt2",
     "timestamp": "2026-09-05T02:24:48Z",
     "device": "cpu",
-    "note": "Evaluated on GPT-2 (124M). High-level reasoning benchmarks (GSM8K, ARC, MMLU) require instruction-tuned 7B+ models and are reserved for future cluster runs."
+    "status": "invalidated",
+    "invalidated_reason": "The generating script evaluated eight hand-written prose strings, not WikiText-2. The recorded perplexities and merge figures are historical and must not be cited as WikiText-2 results.",
+    "note": "The script has been corrected to evaluate the actual WikiText-2 validation split. Re-run it to produce a valid result. High-level reasoning benchmarks (GSM8K, ARC, MMLU) are not included."
   },
   "perplexity_eval": {
     "fp16_base_ppl": 181.66362748325858,

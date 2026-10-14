@@ -10,6 +10,7 @@ import math
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from unittest.mock import patch
 
 from m2lrf.unified_layer import (
     M2LRFUnifiedLinear,
@@ -161,6 +162,13 @@ class TestM2LRFUnifiedLinear(unittest.TestCase):
 
         # Rotated layer should achieve higher SQNR on heavy-tailed distribution
         self.assertGreater(sqnr_rot, sqnr_unrot + 2.0)
+
+    def test_loftq_svd_failure_is_reported(self):
+        layer = M2LRFUnifiedLinear(4, 4, bits=2, group_size=None, rank=2)
+        with patch("torch.svd_lowrank", side_effect=RuntimeError("low-rank failure")):
+            with patch("torch.linalg.svd", side_effect=RuntimeError("exact failure")):
+                with self.assertRaisesRegex(RuntimeError, "both failed"):
+                    layer.initialize_from_pretrained(torch.randn(4, 4))
 
 
 if __name__ == "__main__":

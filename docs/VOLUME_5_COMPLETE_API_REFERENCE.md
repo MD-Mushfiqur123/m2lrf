@@ -4,7 +4,6 @@
 
 > **Lead Author & System Architect:** **MD-Mushfiqur Rahim**  
 > **Affiliation / Project:** Independent Open-Source AI Research / M-Series Engineering  
-> **Correspondence:** `mushfiqur.research@gmail.com`  
 > **Repository:** `projects/m2lrf-clean/` | **Release:** `v2.0.0-Enterprise-Production`  
 > **Package Namespace:** `m2lrf`  
 
@@ -264,13 +263,13 @@ Quantizes FP16 scale tensor into `uint8` with per-channel super-scales.
   - `eps` (`float`): Numerical stability epsilon (default: `1e-8`).
 - **Returns:**
   - `q_scales` (`torch.Tensor`): `uint8` tensor of shape `[..., num_groups]`.
-  - `super_scale` (`torch.Tensor`): FP16 tensor of shape `[..., 1]`.
+  - `super_scale` (`torch.Tensor`): FP32 tensor of shape `[..., 1]`.
 
 #### `dequantize(q_scales, super_scale, dtype=torch.float16)`
 Dequantizes `uint8` scales back to floating-point representation.
 - **Parameters:**
   - `q_scales` (`torch.Tensor`): Quantized `uint8` scale tensor.
-  - `super_scale` (`torch.Tensor`): FP16 super-scale tensor.
+  - `super_scale` (`torch.Tensor`): FP32 super-scale tensor.
   - `dtype` (`torch.dtype`): Target floating point dtype (default: `torch.float16`).
 - **Returns:** Dequantized scales of shape `q_scales.shape`.
 

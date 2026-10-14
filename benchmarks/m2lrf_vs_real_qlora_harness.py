@@ -126,7 +126,7 @@ def load_base_tokenizer(model_id: str):
 # ====================================================================================================
 
 class BenchmarkTextDataset(Dataset):
-    """Generates synthetic or pre-tokenized token sequences for controlled training isolation."""
+    """Generates synthetic token sequences for controlled implementation testing."""
     def __init__(self, num_samples: int = 128, seq_len: int = 128, vocab_size: int = 50257, seed: int = 42):
         generator = torch.Generator().manual_seed(seed)
         self.data = torch.randint(100, min(vocab_size, 30000), (num_samples, seq_len), dtype=torch.long, generator=generator)
@@ -140,28 +140,28 @@ class BenchmarkTextDataset(Dataset):
 
 
 def load_wikitext_validation_tokens(tokenizer, max_tokens: int = 256) -> torch.Tensor:
-    """Loads a slice of WikiText-2 validation split or fallback standard text corpus."""
-    max_tokens = min(max_tokens, 256)
+    """Loads a bounded WikiText-2 validation sample; fails rather than substituting text."""
+    if max_tokens < 2:
+        raise ValueError("max_tokens must be at least 2 for causal language-model evaluation")
     try:
         from datasets import load_dataset
-        try:
-            raw = load_dataset("Salesforce/wikitext", "wikitext-2-raw-v1", split="validation")
-        except Exception:
-            raw = load_dataset("wikitext", "wikitext-2-raw-v1", split="validation")
-        full_text = "\n\n".join([x["text"] for x in raw if x["text"].strip()][:50])
-        tokens = tokenizer(full_text, return_tensors="pt", max_length=max_tokens, truncation=True)["input_ids"]
-        return tokens
-    except Exception as e:
-        print(f"⚠️ WARNING: WikiText-2 load failed ({e}), falling back to degenerate repeated text — results NOT representative!")
-        # Standard fallback representative corpus
-        fallback_corpus = (
-            "The multi-rate low-rank factorization framework enables extreme weight quantization "
-            "down to two bits per parameter while maintaining high spectral fidelity across large language models. "
-            "By decomposing weight matrices into disjoint ternary basis tensors and applying truncated SVD "
-            "residual initialization, quantization error is captured in trainable low-rank adapters. "
-        ) * 10
-        tokens = tokenizer(fallback_corpus, return_tensors="pt", max_length=max_tokens, truncation=True)["input_ids"]
-        return tokens
+    except ImportError as exc:
+        raise RuntimeError(
+            "WikiText-2 evaluation requires the optional 'datasets' package."
+        ) from exc
+
+    raw = load_dataset("Salesforce/wikitext", "wikitext-2-raw-v1", split="validation")
+    full_text = "\n\n".join(row["text"] for row in raw if row["text"].strip())
+    tokens = tokenizer(
+        full_text,
+        return_tensors="pt",
+        max_length=max_tokens,
+        truncation=True,
+        add_special_tokens=False,
+    )["input_ids"]
+    if tokens.size(1) < 2:
+        raise ValueError("WikiText-2 validation sample produced fewer than two tokens.")
+    return tokens
 
 
 # Curated GSM8K real benchmark problems for resilient evaluation
@@ -779,7 +779,7 @@ def main():
     parser.add_argument("--target-avg-bits", type=float, default=None,
                         help="Mixed precision target average bits per parameter (e.g. 2.60)")
     parser.add_argument("--skip-qlora", action="store_true", default=False,
-                        help="Skip QLoRA trial (use verified reference) to focus on M-2LRF ablation")
+                        help="Skip the QLoRA trial; its metrics will be marked as not measured")
     parser.add_argument("--gen-tokens", type=int, default=64,
                         help="Number of tokens to generate during throughput test (default: 64)")
     parser.add_argument("--output-json", type=str, default="benchmarks/m2lrf_vs_real_qlora_results.json",
@@ -843,20 +843,9 @@ def main():
         )
     else:
         qlora_results = {
-            "method": "Real QLoRA (NF4 4-bit + Double Quant, Reference)",
-            "base_bitrate_bpp": 4.0,
-            "static_vram_mb": 0.0,
-            "peak_training_vram_mb": 0.0,
-            "val_loss": 3.2685,
-            "val_ppl": 26.27,
-            "step_0_loss": 3.2720,
-            "step_final_loss": 12.0687,
-            "loss_reduction": -8.7967,
-            "training_time_s": 2.64,
-            "ms_per_step": 880.21,
-            "trainable_parameters": 2359296,
-            "gen_tokens_per_sec": 23.57,
-            "avg_ttft_ms": 65.30
+            "method": "Real QLoRA trial skipped",
+            "measured": False,
+            "note": "No QLoRA metrics were collected for this run."
         }
 
     # 2. Run M-2LRF Trial
@@ -898,7 +887,10 @@ def main():
             "batch_size": args.batch_size,
             "seq_len": args.seq_len,
             "learning_rate": args.lr,
-            "timestamp": time.strftime("%Y-%m-%d %H:%M:%S")
+            "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+            "training_data": "synthetic random token IDs; controlled implementation test, not task training",
+            "validation_data": "WikiText-2 validation sample",
+            "validation_token_limit": 1024
         },
         "real_qlora_nf4": qlora_results,
         "m2lrf_2bit_loftq": m2lrf_results

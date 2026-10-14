@@ -11,7 +11,7 @@ where:
 Supports:
   1. Per-tensor / Per-row Dual-Basis Quantization (Standard M-2LRF, ~9.30 dB SQNR)
   2. Group-Wise Dual-Basis Quantization (group_size e.g. 64, 128 for 11.5+ dB SQNR)
-  3. 8-Bit Double Quantization (DQ) of scale vectors (50% scale memory reduction)
+  3. 8-Bit Double Quantization (DQ) of scale vectors (about 47% scale memory reduction)
   4. Outlier-Aware Robust Quantization (> 3.5 sigma) with optional Sparse Outlier Buffer
 """
 
@@ -157,7 +157,7 @@ class DoubleQuantizer:
         eps: float = 1e-8
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         """
-        Quantizes FP16 scale tensor into uint8 with per-channel super-scale.
+        Quantizes FP16 scales into uint8 with FP32 per-channel super-scales.
         
         Args:
             scales: FP16/FP32 scale tensor of shape [..., num_groups]
@@ -166,15 +166,14 @@ class DoubleQuantizer:
             
         Returns:
             q_scales: uint8 tensor of shape [..., num_groups]
-            super_scale: FP16 super-scale tensor of shape [..., 1]
+            super_scale: FP32 super-scale tensor of shape [..., 1]
         """
         scales_f = scales.float()
         max_scale = torch.amax(scales_f, dim=dim, keepdim=True).clamp(min=eps)
-        super_scale = (max_scale / 255.0).to(torch.float16)
-        
-        super_scale_f = super_scale.float().clamp(min=eps)
+        super_scale = max_scale / 255.0
+
         q_scales = torch.clamp(
-            torch.round(scales_f / super_scale_f),
+            torch.round(scales_f / super_scale),
             0,
             255
         ).to(torch.uint8)
@@ -192,13 +191,13 @@ class DoubleQuantizer:
         
         Args:
             q_scales: uint8 quantized scale tensor
-            super_scale: FP16 super-scale tensor
+            super_scale: FP32 super-scale tensor
             dtype: Target floating point dtype (default: torch.float16)
             
         Returns:
             Reconstructed scale tensor in specified dtype
         """
-        return (q_scales.to(dtype=dtype) * super_scale.to(dtype=dtype))
+        return (q_scales.float() * super_scale.float()).to(dtype=dtype)
 
 
 class DualBasisQuantizer:
@@ -281,7 +280,9 @@ class DualBasisQuantizer:
 
         if outlier_clip_sigma is not None or return_sparse_outliers:
             sigma_thresh = outlier_threshold_sigma if outlier_threshold_sigma is not None else 3.5
-            std_row = torch.std(w_f, dim=-1, keepdim=True).clamp(min=1e-8)
+            std_row = torch.std(
+                w_f, dim=-1, keepdim=True, correction=1 if in_features > 1 else 0
+            ).clamp(min=1e-8)
             outlier_boundary = std_row * sigma_thresh
 
             if return_sparse_outliers:
@@ -303,7 +304,25 @@ class DualBasisQuantizer:
                 w_padded = w_working
 
             w_grouped = w_padded.view(*batch_dims, num_groups, group_size)
-            std = torch.std(w_grouped, dim=-1, keepdim=True).clamp(min=1e-8)
+            valid_counts = torch.clamp(
+                in_features - torch.arange(num_groups, device=w.device) * group_size,
+                min=0,
+                max=group_size
+            ).to(w_grouped.dtype)
+            valid_mask = (
+                torch.arange(group_size, device=w.device).unsqueeze(0)
+                < valid_counts.unsqueeze(1)
+            ).to(w_grouped.dtype)
+            valid_mask = valid_mask.view(
+                *((1,) * len(batch_dims)), num_groups, group_size
+            )
+            counts = valid_mask.sum(dim=-1, keepdim=True).clamp(min=1)
+            means = (w_grouped * valid_mask).sum(dim=-1, keepdim=True) / counts
+            squared_deviations = ((w_grouped - means) ** 2) * valid_mask
+            variance_denominator = (counts - 1).clamp(min=1)
+            std = torch.sqrt(
+                squared_deviations.sum(dim=-1, keepdim=True) / variance_denominator
+            ).clamp(min=1e-8)
 
             a0 = std * LLOYD_MAX_A0
             a1 = std * LLOYD_MAX_A1
@@ -340,7 +359,10 @@ class DualBasisQuantizer:
             return t0, t1, a0, a1, w_base
 
         # Standard per-row scaling
-        std = torch.std(w_working, dim=-1, keepdim=True).clamp(min=1e-8)
+        std = torch.std(
+            w_working, dim=-1, keepdim=True,
+            correction=1 if in_features > 1 else 0
+        ).clamp(min=1e-8)
         a0 = std * LLOYD_MAX_A0
         a1 = std * LLOYD_MAX_A1
         decision_boundary = (a0 + a1) / 2.0
@@ -371,4 +393,3 @@ class DualBasisQuantizer:
         if return_sparse_outliers:
             return t0, t1, a0, a1, w_base, sparse_outliers
         return t0, t1, a0, a1, w_base
-

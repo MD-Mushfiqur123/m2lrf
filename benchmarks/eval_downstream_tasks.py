@@ -1,5 +1,5 @@
 
-import os, sys, math, time, json
+import sys, math, time, json
 
 if hasattr(sys.stdout, "reconfigure"):
     try:
@@ -13,16 +13,73 @@ if hasattr(sys.stderr, "reconfigure"):
         pass
 
 import torch
-import torch.nn as nn
+import torch.nn.functional as F
 from pathlib import Path
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 root = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(root))
 
-from m2lrf.unified_layer import M2LRFUnifiedLinear
 from m2lrf.trainer_eval import prepare_m2lrf_model
 from m2lrf.mixed_precision import allocate_mixed_precision_model
+
+
+def load_wikitext2_validation_tokens(tokenizer):
+    try:
+        from datasets import load_dataset
+    except ImportError as exc:
+        raise RuntimeError(
+            "WikiText-2 evaluation requires the optional 'datasets' package."
+        ) from exc
+
+    dataset = load_dataset(
+        "Salesforce/wikitext", "wikitext-2-raw-v1", split="validation"
+    )
+    text = "\n\n".join(row["text"] for row in dataset if row["text"].strip())
+    tokens = tokenizer(
+        text, return_tensors="pt", add_special_tokens=False
+    )["input_ids"]
+    if tokens.size(1) < 2:
+        raise ValueError("WikiText-2 validation split produced fewer than two tokens.")
+    return tokens
+
+
+def compute_perplexity(eval_model, tokens, stride=512):
+    eval_model.eval()
+    max_length = getattr(
+        eval_model.config,
+        "max_position_embeddings",
+        getattr(eval_model.config, "n_positions", 1024),
+    )
+    max_length = int(max_length)
+    stride = min(int(stride), max_length - 1)
+    if max_length < 2 or stride < 1:
+        raise ValueError("Model context length and evaluation stride must be positive.")
+
+    device = next(eval_model.parameters()).device
+    token_count = tokens.size(1)
+    total_nll = 0.0
+    scored_tokens = 0
+    with torch.no_grad():
+        for target_start in range(1, token_count, stride):
+            target_end = min(target_start + stride, token_count)
+            context_start = max(0, target_end - max_length)
+            input_ids = tokens[:, context_start:target_end].to(device)
+            outputs = eval_model(input_ids)
+
+            first_logit = target_start - context_start - 1
+            target_count = target_end - target_start
+            logits = outputs.logits[:, first_logit:first_logit + target_count, :]
+            targets = tokens[:, target_start:target_end].to(device)
+            total_nll += F.cross_entropy(
+                logits.reshape(-1, logits.size(-1)),
+                targets.reshape(-1),
+                reduction="sum",
+            ).item()
+            scored_tokens += target_count
+
+    return math.exp(total_nll / scored_tokens), scored_tokens
+
 
 def evaluate_downstream(output_path='benchmarks/downstream_eval_results.json'):
     print('=' * 85)
@@ -36,51 +93,31 @@ def evaluate_downstream(output_path='benchmarks/downstream_eval_results.json'):
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
 
-    val_texts = [
-        'The quick brown fox jumps over the lazy dog. In linguistics, syntax is the study of principles and rules.',
-        'Machine learning algorithms build a mathematical model based on sample data to make predictions or decisions.',
-        'Low-rank adaptation decomposes weight update matrices into two low-rank factor matrices, dramatically reducing memory.',
-        'Deep neural networks are composed of multiple layers of parameterized transformations that extract hierarchical features.',
-        'Quantization maps continuous infinite values to a smaller set of discrete finite values, reducing bit precision.',
-        'Fast Walsh-Hadamard transform computes randomized orthogonal matrix multiplications in O(d log d) time without latency penalty.',
-        'Transformer self-attention projects queries, keys, and values across multiple parallel attention heads.',
-        'The singular value decomposition factorizes any real matrix into orthogonal coordinate bases and singular values.'
-    ]
-    val_encodings = [tokenizer(t, return_tensors='pt').input_ids.to(device) for t in val_texts]
+    validation_tokens = load_wikitext2_validation_tokens(tokenizer)
 
-    def compute_ppl(eval_model):
-        eval_model.eval()
-        nlls = []
-        with torch.no_grad():
-            for input_ids in val_encodings:
-                outputs = eval_model(input_ids, labels=input_ids)
-                neg_log_likelihood = outputs.loss.item() * input_ids.size(1)
-                nlls.append(neg_log_likelihood)
-        total_tokens = sum(input_ids.size(1) for input_ids in val_encodings)
-        ppl = math.exp(sum(nlls) / total_tokens)
-        return ppl
-
-    print("\n--- Evaluating 1. Base Model (FP16 / FP32) ---")
+    print("\n--- Evaluating 1. Base Model ---")
     base_model = AutoModelForCausalLM.from_pretrained(model_id).to(device)
-    base_ppl = compute_ppl(base_model)
+    base_dtype = str(next(base_model.parameters()).dtype)
+    print(f"  Base model dtype: {base_dtype}")
+    base_ppl, scored_tokens = compute_perplexity(base_model, validation_tokens)
     print(f'  Base Model Validation Perplexity: {base_ppl:.2f}')
 
     print("\n--- Evaluating 2. M-2LRF 2-Bit Baseline (Per-Row, r=0) ---")
     model_2bit_base = AutoModelForCausalLM.from_pretrained(model_id).to(device)
     prepare_m2lrf_model(model_2bit_base, rank=0, group_size=None, use_hadamard=False)
-    base_2bit_ppl = compute_ppl(model_2bit_base)
+    base_2bit_ppl, _ = compute_perplexity(model_2bit_base, validation_tokens)
     print(f'  M-2LRF 2-Bit Baseline Perplexity: {base_2bit_ppl:.2f}')
 
     print("\n--- Evaluating 3. M-2LRF Unified (FWHT + G=64 + LoftQ r=32) ---")
     model_unified = AutoModelForCausalLM.from_pretrained(model_id).to(device)
     prepare_m2lrf_model(model_unified, rank=32, group_size=64, use_hadamard=True, loftq_iters=1)
-    unified_ppl = compute_ppl(model_unified)
+    unified_ppl, _ = compute_perplexity(model_unified, validation_tokens)
     print(f'  M-2LRF Unified (FWHT + G=64 + LoftQ r=32) Perplexity: {unified_ppl:.2f}')
 
     print("\n--- Evaluating 4. M-2LRF Mixed 2/4-Bit Allocation (Target 2.60 bpp) ---")
     model_mixed = AutoModelForCausalLM.from_pretrained(model_id).to(device)
     model_mixed, plan = allocate_mixed_precision_model(model_mixed, target_avg_bits=2.60, rank=16)
-    mixed_ppl = compute_ppl(model_mixed)
+    mixed_ppl, _ = compute_perplexity(model_mixed, validation_tokens)
     eff_bpp = getattr(plan, "effective_base_bits", 2.60)
     print(f'  M-2LRF Mixed 2/4-Bit Perplexity: {mixed_ppl:.2f} (Effective bpp: {eff_bpp:.2f})')
 
@@ -105,10 +142,13 @@ def evaluate_downstream(output_path='benchmarks/downstream_eval_results.json'):
             'model_id': model_id,
             'timestamp': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()),
             'device': str(device),
+            'evaluation_dataset': 'Salesforce/wikitext wikitext-2-raw-v1 validation',
+            'scored_tokens': scored_tokens,
+            'model_dtype': base_dtype,
             'note': 'Evaluated on GPT-2 (124M). High-level reasoning benchmarks (GSM8K, ARC, MMLU) require instruction-tuned 7B+ models and are reserved for future cluster runs.'
         },
         'perplexity_eval': {
-            'fp16_base_ppl': base_ppl,
+            'base_model_ppl': base_ppl,
             'm2lrf_2bit_baseline_ppl': base_2bit_ppl,
             'm2lrf_unified_loftq_r32_ppl': unified_ppl,
             'm2lrf_mixed_2_6bpp_ppl': mixed_ppl,
@@ -122,7 +162,7 @@ def evaluate_downstream(output_path='benchmarks/downstream_eval_results.json'):
         }
     }
 
-    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    Path(output_path).parent.mkdir(parents=True, exist_ok=True)
     with open(output_path, 'w', encoding='utf-8') as f:
         json.dump(results, f, indent=2)
     print(f"\n[+] Downstream benchmark results saved to: {output_path}")
